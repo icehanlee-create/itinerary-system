@@ -179,7 +179,6 @@
 
       <div style="overflow-x: auto;">
         <table>
-          <!-- 表頭會由 JS 根據身分動態產生 -->
           <thead id="dataTableHead">
           </thead>
           <tbody id="dataTableBody">
@@ -670,8 +669,8 @@
       }
     }
 
-    function populateFormFromRecord(index) {
-      const item = allSchedules[index];
+    function populateFormFromRecord(originalIndex) {
+      const item = allSchedules[originalIndex];
       if (!item) return;
 
       currentEditRecordId = item.id; 
@@ -779,7 +778,6 @@
 
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
-      const thead = document.getElementById('dataTableHead');
       const isAdmin = currentUser && currentUser.role === 'admin';
       
       try {
@@ -787,7 +785,7 @@
         if (res.status === 'success') {
           allSchedules = res.data;
           
-          // ★ 依據輔導日期倒序排列，若同日則依據建立時間(ID)倒序
+          // 依據輔導日期倒序排列，若同日則依據建立時間(ID)倒序
           allSchedules.sort((a, b) => {
             const dateA = new Date(a.coachingDate).getTime();
             const dateB = new Date(b.coachingDate).getTime();
@@ -795,7 +793,18 @@
             return b.id - a.id;
           });
           
-          renderTable(allSchedules);
+          // ★ 預先計算好每筆的累計時數與記錄原始陣列的索引 (Original Index)
+          // 這樣就算稍後被搜尋篩選改變了順序，也能精準找回原始資料
+          allSchedules.forEach((item, idx) => {
+            const cumulativeMins = calculateCumulativeForRecord(idx, allSchedules);
+            const cumHours = Math.floor(cumulativeMins / 60);
+            const cumMins = cumulativeMins % 60;
+            item.cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins}分` : "0小時0分";
+            item.originalIndex = idx;
+          });
+          
+          // ★ 這裡改為呼叫 filterData()，這樣重新載入時就會自動套用搜尋框裡還留著的字
+          filterData(); 
         } else {
           tbody.innerHTML = `<tr><td colspan="${isAdmin ? 10 : 9}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
         }
@@ -810,7 +819,6 @@
       const isAdmin = currentUser && currentUser.role === 'admin';
       const colCount = isAdmin ? 10 : 9;
 
-      // ★ 動態產生表頭，非主管隱藏異動紀錄
       thead.innerHTML = `
         <tr>
           <th>服務使用者</th>
@@ -827,30 +835,23 @@
       `;
 
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無通報紀錄</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無符合的通報紀錄</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = data.map((item, idx) => {
+      tbody.innerHTML = data.map((item) => {
         const phoneClean = (item.contactPhone || "").startsWith("'") ? item.contactPhone.substring(1) : item.contactPhone;
-        
-        const cumulativeMins = calculateCumulativeForRecord(idx, data);
-        const cumHours = Math.floor(cumulativeMins / 60);
-        const cumMins = cumulativeMins % 60;
-        const cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins}分` : "0小時0分";
-        
         const isCanceled = (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消'));
-        
-        // ★ 若是主管才產生異動紀錄欄位的內容
         let actionLogCell = isAdmin ? `<td style="color:#666; font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>` : '';
 
+        // ★ 點擊時傳入的是 item.originalIndex (原始絕對座位號碼)，確保篩選後也不會帶錯人
         return `
-        <tr class="clickable-row" onclick="populateFormFromRecord(${idx})" title="點擊載入此筆紀錄以修改重新送出">
+        <tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改重新送出">
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
           <td>${formatDate(item.onboardDate)}</td>
           <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small></td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
-          <td><span style="color:#17a2b8; font-weight:bold;">${cumText}</span></td>
+          <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
