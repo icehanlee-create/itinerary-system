@@ -997,7 +997,7 @@
           <th>輔導日期/時段</th>
           <th>本次時數</th>
           <th>累計時數</th>
-          <th>操作</th>
+          <th>複製時數</th>
           <th>事業單位/地址</th>
           <th>聯絡人/電話</th>
           <th>備註</th>
@@ -1028,7 +1028,7 @@
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
           <td onclick="event.stopPropagation();">
-            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導資訊">📋 複製</button>
+            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">複製</button>
           </td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
