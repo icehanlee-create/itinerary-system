@@ -90,7 +90,7 @@
         <select id="historySelect" onchange="applyHistoryPreset()">
           <option value="">-- 請選擇歷史服務使用者與事業單位 --</option>
         </select>
-        <div class="hint">點選後可自動帶入使用者與事業單位舊資料。</div>
+        <div class="hint">點選後可自動帶入使用者、事業單位與前次輔導時段設定。</div>
       </div>
 
       <form id="scheduleForm" onsubmit="submitSchedule(event)">
@@ -199,7 +199,6 @@
     
     let currentUser = null;
     let sessionToken = null;
-    let userHistoryList = [];
     let allSchedules = [];
     let isEditMode = false;
     let currentEditRecordId = null; 
@@ -255,8 +254,7 @@
           document.getElementById('mainSection').classList.remove('hidden');
 
           initTimeRows();
-          loadUserHistory();
-          loadSchedules();
+          loadSchedules(); // 統一從這裡抓所有歷史資料
         } else {
           SysMsg.error('登入失敗', res.message);
         }
@@ -579,7 +577,6 @@
       return hours * 60 + mins;
     }
 
-    // --- 計算並顯示「畫面上」的累計總執行時間 ---
     function updateCumulativeDuration() {
       const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
       const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
@@ -592,7 +589,7 @@
         return;
       }
 
-      let historyMinutes = 0;
+      const dailyLatestMins = new Map();
       
       allSchedules.forEach((item) => {
         if (isEditMode && item.id === currentEditRecordId) return; 
@@ -606,13 +603,15 @@
         if (cName === clientName && compName === companyName && oDate === onboardDate) {
           // 只累加在當下表單設定日期（含）之前的紀錄
           if (!formCoachingDate || cDate <= formCoachingDate) {
-             // 排除取消的狀態
              if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
-                 historyMinutes += parseDurationToMinutes(item.totalDuration);
+                 dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
              }
           }
         }
       });
+
+      let historyMinutes = 0;
+      dailyLatestMins.forEach(mins => historyMinutes += mins);
 
       const currentDurationText = String(document.getElementById('totalDurationText').innerText);
       let currentMinutes = 0;
@@ -628,7 +627,6 @@
       displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
     }
 
-    // --- 獨立計算某筆紀錄的累計時數 (供表格渲染使用) ---
     function calculateCumulativeForRecord(recordIndex, allData) {
       const record = allData[recordIndex];
       const rClient = cleanAndToHalfWidth(record.clientName).toLowerCase();
@@ -649,11 +647,9 @@
          if (iClient === rClient && iOnboard === rOnboard && iComp === rComp) {
             const cDate = formatDate(item.coachingDate);
             if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
-               // 累加日期在該筆紀錄之前的所有資料
                if (cDate < targetDateStr) {
                   totalMins += parseDurationToMinutes(item.totalDuration);
                } 
-               // 針對同一天如果有多筆，則用唯一隱藏ID(建檔時間戳)來判斷先後，只累加較早建立的紀錄
                else if (cDate === targetDateStr && item.id <= targetId) {
                   totalMins += parseDurationToMinutes(item.totalDuration);
                }
@@ -664,24 +660,16 @@
       return totalMins;
     }
 
-    async function loadUserHistory() {
-      try {
-        const res = await fetchWithAuth({ action: 'getUserHistory' });
-        if (res.status === 'success') {
-          userHistoryList = res.history;
-          renderHistoryDropdown();
-        }
-      } catch (err) {
-        console.error("載入歷史選單失敗:", err);
-      }
-    }
-
+    // ★ 改由全域的 allSchedules 提取選項，並加入權限識別
     function renderHistoryDropdown() {
       const select = document.getElementById('historySelect');
       select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
 
       const uniqueMap = new Map();
-      userHistoryList.forEach(item => {
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
+      // 由於 allSchedules 已按最新日期排序，Map 會自動保留第一筆最新資料
+      allSchedules.forEach(item => {
         const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
         if (!uniqueMap.has(key)) uniqueMap.set(key, item);
       });
@@ -689,7 +677,9 @@
       uniqueMap.forEach((item, key) => {
         const opt = document.createElement('option');
         opt.value = key;
-        opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}`;
+        // 如果是主管，額外在後面標記建立該個案的就服員名字
+        const agentInfo = isAdmin ? ` (就服員: ${item.agentName})` : '';
+        opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}${agentInfo}`;
         select.appendChild(opt);
       });
     }
@@ -698,20 +688,39 @@
       const selectedKey = document.getElementById('historySelect').value;
       if (!selectedKey) return;
 
-      const matched = userHistoryList.find(item => `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey);
+      const matched = allSchedules.find(item => `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey);
       if (matched) {
         document.getElementById('clientName').value = matched.clientName;
         document.getElementById('onboardDate').value = formatDate(matched.onboardDate);
         document.getElementById('companyName').value = matched.companyName;
         document.getElementById('workAddress').value = matched.workAddress;
         document.getElementById('contactPerson').value = matched.contactPerson;
-        document.getElementById('contactPhone').value = matched.contactPhone;
         
-        // ★ 不帶入歷史備註
+        const phoneClean = String(matched.contactPhone || "").startsWith("'") ? String(matched.contactPhone).substring(1) : String(matched.contactPhone || "");
+        document.getElementById('contactPhone').value = phoneClean;
+        
+        // 不帶入歷史備註
         document.getElementById('remarks').value = "";
+
+        // ★ 一併帶入前次預計職場輔導時段設定
+        const container = document.getElementById('timeRowsContainer');
+        container.innerHTML = '';
+        const coachingTimeStr = String(matched.coachingTime || "");
+        const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
+
+        if (!isCanceled && coachingTimeStr) {
+          const timeSlots = coachingTimeStr.split('、');
+          timeSlots.forEach(slot => {
+            const parts = slot.split('-');
+            if (parts.length === 2) addTimeRow(parts[0], parts[1]);
+          });
+        }
         
+        if (container.children.length === 0) initTimeRows();
+
         checkDateSequence(); 
         updateCumulativeDuration(); 
+        calculateTotalDuration(); // 重算剛帶入的時段
       }
     }
 
@@ -721,11 +730,13 @@
 
       if (!currentCompany) return;
 
-      const matched = userHistoryList.find(item => item.companyName.toLowerCase() === currentCompany);
+      // 也改為直接去 allSchedules 搜尋匹配
+      const matched = allSchedules.find(item => item.companyName.toLowerCase() === currentCompany);
       if (matched) {
         if (!document.getElementById('workAddress').value) document.getElementById('workAddress').value = matched.workAddress;
         if (!document.getElementById('contactPerson').value) document.getElementById('contactPerson').value = matched.contactPerson;
-        if (!document.getElementById('contactPhone').value) document.getElementById('contactPhone').value = matched.contactPhone;
+        const phoneClean = String(matched.contactPhone || "").startsWith("'") ? String(matched.contactPhone).substring(1) : String(matched.contactPhone || "");
+        if (!document.getElementById('contactPhone').value) document.getElementById('contactPhone').value = phoneClean;
       }
     }
 
@@ -830,8 +841,7 @@
           setFormMode('add');
           updateCumulativeDuration(); 
           
-          loadUserHistory();
-          loadSchedules();
+          loadSchedules(); // 重刷紀錄
         } else {
           SysMsg.error('通報失敗', res.message);
         }
@@ -868,7 +878,8 @@
             item.originalIndex = idx;
           });
           
-          // ★ 這裡確保資料載入完成且算出 index 後，才執行畫面過濾渲染
+          // ★ 生成新的選單並保留原本過濾內容
+          renderHistoryDropdown();
           filterData(); 
         } else {
           tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
@@ -932,7 +943,6 @@
       const keyword = String(document.getElementById('searchInput').value || "").toLowerCase().trim();
       if (!keyword) return renderTable(allSchedules);
 
-      // ★ 嚴謹的強型別轉換保護 (String casting)，徹底解決搜尋報錯與不穩定
       const filtered = allSchedules.filter(item => {
         const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
         return (
