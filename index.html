@@ -109,7 +109,7 @@
               <label>⏰ 預計職場輔導時段設定 (24小時制)</label>
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" onclick="addTimeRow()">➕ 新增時段</button>
-              <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有重疊，請修正！</div>
+              <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤，請修正！</div>
               <div class="duration-display" id="totalDurationText">執行時間：0小時0分</div>
             </div>
           </div>
@@ -299,15 +299,15 @@
         badge.className = 'badge badge-edit';
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        document.body.style.backgroundColor = '#d6d8db'; // 灰色底色
-        coachingDateInput.readOnly = true;               // 鎖定日期不可修改
+        document.body.style.backgroundColor = '#d6d8db'; 
+        coachingDateInput.readOnly = true;               
         dateLockHint.classList.remove('hidden');
       } else {
         badge.innerText = '新增模式';
         badge.className = 'badge badge-add';
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
-        document.body.style.backgroundColor = '#f4f7f6'; // 恢復預設底色
+        document.body.style.backgroundColor = '#f4f7f6'; 
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
       }
@@ -373,6 +373,8 @@
       const startInputs = document.querySelectorAll('.start-time');
       const endInputs = document.querySelectorAll('.end-time');
       let intervals = [];
+      let hasTimeError = false; 
+      let errorMsg = "";
 
       for (let i = 0; i < startInputs.length; i++) {
         const start = startInputs[i].value;
@@ -383,7 +385,13 @@
           const [eH, eM] = end.split(':').map(Number);
           let sMin = sH * 60 + sM;
           let eMin = eH * 60 + eM;
-          if (eMin > sMin) intervals.push({ start: sMin, end: eMin });
+          
+          if (eMin < sMin) {
+            hasTimeError = true;
+            errorMsg = "結束時間不可早於開始時間，請修正！";
+          } else if (eMin > sMin) {
+            intervals.push({ start: sMin, end: eMin });
+          }
         }
       }
 
@@ -391,11 +399,12 @@
       let totalMinutes = 0;
       let hasOverlap = false;
 
-      if (intervals.length > 0) {
+      if (intervals.length > 0 && !hasTimeError) {
         let current = intervals[0];
         for (let i = 1; i < intervals.length; i++) {
           if (intervals[i].start < current.end) {
             hasOverlap = true;
+            errorMsg = "時段設定有重疊，請修正！";
             current.end = Math.max(current.end, intervals[i].end);
           } else {
             totalMinutes += (current.end - current.start);
@@ -408,10 +417,11 @@
       const btn = document.getElementById('submitBtn');
       const warningEl = document.getElementById('overlapWarning');
 
-      if (hasOverlap) {
+      if (hasTimeError || hasOverlap) {
+        warningEl.innerText = `⚠️ 警告：${errorMsg}`;
         warningEl.classList.remove('hidden');
         btn.disabled = true;
-        document.getElementById('totalDurationText').innerText = `執行時間：時段發生重疊，請修正！`;
+        document.getElementById('totalDurationText').innerText = `執行時間：格式錯誤`;
         return "錯誤";
       } else {
         warningEl.classList.add('hidden');
@@ -438,10 +448,14 @@
 
     // --- 歷史資料套用機制 ---
     async function loadUserHistory() {
-      const res = await fetchWithAuth({ action: 'getUserHistory' });
-      if (res.status === 'success') {
-        userHistoryList = res.history;
-        renderHistoryDropdown();
+      try {
+        const res = await fetchWithAuth({ action: 'getUserHistory' });
+        if (res.status === 'success') {
+          userHistoryList = res.history;
+          renderHistoryDropdown();
+        }
+      } catch (err) {
+        console.error("載入歷史選單失敗:", err);
       }
     }
 
@@ -504,7 +518,6 @@
       document.getElementById('workAddress').value = item.workAddress;
       document.getElementById('contactPerson').value = item.contactPerson;
       
-      // 去除存檔時附加的單引號 (如果有的話)
       const phoneClean = (item.contactPhone || "").startsWith("'") ? item.contactPhone.substring(1) : item.contactPhone;
       document.getElementById('contactPhone').value = phoneClean;
       
@@ -534,11 +547,10 @@
       let totalDuration = "0小時0分";
       let coachingTimeStr = "取消輔導";
 
-      // 若非取消通知，才計算時間並防呆重疊
       if (submitType !== 'cancel') {
         totalDuration = calculateTotalDuration();
         if (totalDuration === "錯誤") {
-          alert("時段設定有重疊，請修正後再送出！");
+          alert("時段設定有錯誤，請修正後再送出！");
           return;
         }
         coachingTimeStr = getFormattedTimeSlots();
@@ -591,10 +603,17 @@
     }
 
     async function loadSchedules() {
-      const res = await fetchWithAuth({ action: 'getSchedules' });
-      if (res.status === 'success') {
-        allSchedules = res.data;
-        renderTable(allSchedules);
+      const tbody = document.getElementById('dataTableBody');
+      try {
+        const res = await fetchWithAuth({ action: 'getSchedules' });
+        if (res.status === 'success') {
+          allSchedules = res.data;
+          renderTable(allSchedules);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
       }
     }
 
