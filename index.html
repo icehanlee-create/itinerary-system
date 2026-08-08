@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>行程安排通報系統</title>
+  
+  <!-- 引入 SweetAlert2 美化彈窗套件 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+
   <style>
     /* 預設背景色為淡青色，修改模式會切換為淡黃色 */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
@@ -45,11 +50,16 @@
     .badge-role { background: #17a2b8; color: white; font-size: 12px;}
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
+    
+    /* 自訂 SweetAlert2 的文字樣式 */
+    .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
+    .swal2-html-container { font-size: 1.1rem !important; }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <!-- 登入區域 -->
     <div id="loginSection">
       <h2>系統登入</h2>
       <div class="form-group">
@@ -63,6 +73,7 @@
       <button onclick="login()" id="loginBtn">登入</button>
     </div>
 
+    <!-- 主要系統區域 -->
     <div id="mainSection" class="hidden">
       <div class="top-bar">
         <div>
@@ -72,6 +83,7 @@
         <button onclick="logout()" class="btn-secondary">登出系統</button>
       </div>
 
+      <!-- 標題與模式切換按鈕 -->
       <h2 id="formTitle">
         📝 行程通報 
         <span id="modeBadge" class="badge badge-add">新增模式</span>
@@ -79,6 +91,7 @@
         <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
       </h2>
 
+      <!-- 歷史紀錄選單 (加入 id 方便隱藏) -->
       <div class="preset-card" id="presetCard">
         <label>⚡ 快速選擇過往訪視對象 (由新到舊)</label>
         <select id="historySelect" onchange="applyHistoryPreset()">
@@ -188,13 +201,20 @@
 
   <script>
     // ⚠️ 記得替換成你的最新 GAS Web App URL
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyJBpokUNZC4sjOb91S3IBxkJXZjucJ0qRuESGoUhyHBXhzFkbQyXZ3y5g_exBMeqW3Kg/exec"; 
+    const GAS_API_URL = "你的_GAS_WEB_APP_URL"; 
     
     let currentUser = null;
     let sessionToken = null;
     let userHistoryList = [];
     let allSchedules = [];
     let isEditMode = false;
+
+    // 自訂的彈窗函數 (包裝 SweetAlert2)
+    const SysMsg = {
+      alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
+      success: (title, text) => Swal.fire({ title: title, text: text, icon: 'success', confirmButtonColor: '#28a745' }),
+      error: (title, text) => Swal.fire({ title: title, text: text, icon: 'error', confirmButtonColor: '#dc3545' })
+    };
 
     // 自動清理文字：除去所有空白，並把全形英數字/標點符號轉為半形
     function cleanAndToHalfWidth(str, isRemarks = false) {
@@ -214,7 +234,7 @@
       const password = document.getElementById('loginPassword').value;
       const btn = document.getElementById('loginBtn');
 
-      if (!username || !password) return alert('請輸入帳號與密碼');
+      if (!username || !password) return SysMsg.alert('請輸入帳號與密碼');
 
       btn.disabled = true;
       btn.innerText = "登入中...";
@@ -246,10 +266,10 @@
           loadUserHistory();
           loadSchedules();
         } else {
-          alert('登入失敗：' + res.message);
+          SysMsg.error('登入失敗', res.message);
         }
       } catch (err) {
-        alert('連線錯誤：' + err.message);
+        SysMsg.error('連線錯誤', err.message);
       } finally {
         btn.disabled = false;
         btn.innerText = "登入";
@@ -266,7 +286,7 @@
       });
       const res = await response.json();
       if (res.status === 'error' && res.message.includes('身分驗證失敗')) {
-        alert(res.message);
+        SysMsg.alert(res.message);
         logout(true);
         throw new Error('Unauthorized');
       }
@@ -284,14 +304,14 @@
       document.getElementById('loginPassword').value = '';
     }
 
-    // --- 模式切換邏輯 (加入黃底與隱藏歷史選單) ---
+    // --- 模式切換邏輯 ---
     function setFormMode(mode) {
       const badge = document.getElementById('modeBadge');
       const switchBtn = document.getElementById('switchModeBtn');
       const cancelBtn = document.getElementById('cancelCoachingBtn');
       const coachingDateInput = document.getElementById('coachingDate');
       const dateLockHint = document.getElementById('dateLockHint');
-      const presetCard = document.getElementById('presetCard'); // 取得快速選單區塊
+      const presetCard = document.getElementById('presetCard');
       
       isEditMode = (mode === 'edit');
 
@@ -300,8 +320,8 @@
         badge.className = 'badge badge-edit';
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        document.body.style.backgroundColor = '#fff3cd'; // 切換為黃底
-        presetCard.classList.add('hidden');              // 隱藏快速選擇歷史選單
+        document.body.style.backgroundColor = '#fff3cd'; 
+        presetCard.classList.add('hidden');              
         coachingDateInput.readOnly = true;               
         dateLockHint.classList.remove('hidden');
       } else {
@@ -309,28 +329,51 @@
         badge.className = 'badge badge-add';
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
-        document.body.style.backgroundColor = '#f4f7f6'; // 恢復原本顏色
-        presetCard.classList.remove('hidden');           // 顯示快速選擇歷史選單
+        document.body.style.backgroundColor = '#f4f7f6'; 
+        presetCard.classList.remove('hidden');           
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
       }
     }
 
     function switchToAddMode() {
-      if (confirm('確定要切換回「新增模式」嗎？\n目前表單上未儲存的資料將會被清空遺失。')) {
-        document.getElementById('scheduleForm').reset();
-        document.getElementById('historySelect').value = '';
-        document.getElementById('agentName').value = currentUser.name;
-        document.getElementById('agentPhone').value = currentUser.phone;
-        initTimeRows();
-        setFormMode('add');
-      }
+      // 替換原生 confirm 為 SweetAlert2
+      Swal.fire({
+        title: '操作確認',
+        text: '確定要切換回「新增模式」嗎？目前表單上未儲存的資料將會被清空遺失。',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0056b3',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '確定切換',
+        cancelButtonText: '取消'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById('scheduleForm').reset();
+          document.getElementById('historySelect').value = '';
+          document.getElementById('agentName').value = currentUser.name;
+          document.getElementById('agentPhone').value = currentUser.phone;
+          initTimeRows();
+          setFormMode('add');
+        }
+      });
     }
 
     function cancelCoaching() {
-      if (confirm("確定要發送【取消當日支持輔導】通知嗎？\n此操作將會發送信件並留下取消紀錄。")) {
-        submitSchedule(null, 'cancel');
-      }
+      Swal.fire({
+        title: '發送確認',
+        text: '確定要發送【取消當日支持輔導】通知嗎？此操作將會發送信件並留下取消紀錄。',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '確定取消輔導',
+        cancelButtonText: '返回'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          submitSchedule(null, 'cancel');
+        }
+      });
     }
 
     // --- 動態時間選擇與計算機制 ---
@@ -368,7 +411,7 @@
         btn.parentElement.remove();
         calculateTotalDuration();
       } else {
-        alert("至少需要保留一個時段！");
+        SysMsg.alert("至少需要保留一個時段！");
       }
     }
 
@@ -546,16 +589,15 @@
     async function submitSchedule(e, forcedSubmitType = null) {
       if (e) e.preventDefault();
 
-      // --- 日期防呆：輔導日期不可早於到職日期 ---
+      // 日期防呆
       const onboardDateVal = document.getElementById('onboardDate').value;
       const coachingDateVal = document.getElementById('coachingDate').value;
       if (onboardDateVal && coachingDateVal) {
         if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
-          alert('⚠️ 警告：預計職場輔導日期不可早於到職日期，請修正後再送出！');
-          return; // 終止送出程序
+          SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
+          return;
         }
       }
-      // ----------------------------------------
       
       const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
       let totalDuration = "0小時0分";
@@ -564,7 +606,7 @@
       if (submitType !== 'cancel') {
         totalDuration = calculateTotalDuration();
         if (totalDuration === "錯誤") {
-          alert("時段設定有錯誤，請修正後再送出！");
+          SysMsg.error('時段錯誤', '時段設定有錯誤（重疊或格式不對），請修正後再送出！');
           return;
         }
         coachingTimeStr = getFormattedTimeSlots();
@@ -594,7 +636,7 @@
       try {
         const res = await fetchWithAuth(payload);
         if (res.status === 'success') {
-          alert(res.message);
+          SysMsg.success('處理完成', res.message);
           
           document.getElementById('scheduleForm').reset();
           document.getElementById('historySelect').value = '';
@@ -606,10 +648,10 @@
           loadUserHistory();
           loadSchedules();
         } else {
-          alert('通報失敗：' + res.message);
+          SysMsg.error('通報失敗', res.message);
         }
       } catch (err) {
-        if (err.message !== 'Unauthorized') alert('錯誤：' + err.message);
+        if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
       } finally {
         btn.disabled = false;
         btn.innerText = '儲存並送出通報通知';
