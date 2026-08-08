@@ -75,7 +75,11 @@
           歡迎，<strong id="currentUserSpan"></strong> 
           <span class="hint">電話: <span id="currentPhoneSpan"></span></span>
         </div>
-        <button onclick="logout()" class="btn-secondary">登出系統</button>
+        <div>
+          <!-- ★ 新增變更密碼按鈕 -->
+          <button onclick="openChangePassword()" class="btn-warning" style="margin-right: 10px;">🔑 變更密碼</button>
+          <button onclick="logout()" class="btn-secondary">登出系統</button>
+        </div>
       </div>
 
       <h2 id="formTitle">
@@ -117,7 +121,6 @@
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
               
-              <!-- 錯誤警告與行程重疊阻擋提示 -->
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤，請修正！</div>
               <div id="agentOverlapWarning" class="error-text hidden">⚠️ 警告：此時段已有其他安排！</div>
               
@@ -254,7 +257,7 @@
           document.getElementById('mainSection').classList.remove('hidden');
 
           initTimeRows();
-          loadSchedules(); // 統一從這裡抓所有歷史資料
+          loadSchedules(); 
         } else {
           SysMsg.error('登入失敗', res.message);
         }
@@ -292,6 +295,64 @@
       document.getElementById('mainSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
+    }
+
+    // ★ 新增：變更密碼的視窗邏輯
+    async function openChangePassword() {
+      const { value: formValues } = await Swal.fire({
+        title: '🔑 變更密碼',
+        html:
+          '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold;">舊密碼：</div>' +
+          '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請輸入目前的密碼">' +
+          '<div style="text-align:left; font-size:14px; margin-top:15px; margin-bottom:5px; font-weight:bold;">設定新密碼：</div>' +
+          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請設定新密碼">' +
+          '<div style="text-align:left; font-size:14px; margin-top:15px; margin-bottom:5px; font-weight:bold;">確認新密碼：</div>' +
+          '<input id="swal-input-confirm" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請再次輸入新密碼">',
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonColor: '#0056b3',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '確認變更',
+        cancelButtonText: '取消',
+        preConfirm: () => {
+          const oldPwd = document.getElementById('swal-input-old').value;
+          const newPwd = document.getElementById('swal-input-new').value;
+          const confirmPwd = document.getElementById('swal-input-confirm').value;
+
+          if (!oldPwd || !newPwd || !confirmPwd) {
+            Swal.showValidationMessage('請完整填寫所有密碼欄位！');
+            return false;
+          }
+          if (newPwd !== confirmPwd) {
+            Swal.showValidationMessage('新密碼與確認密碼不一致！');
+            return false;
+          }
+          if (oldPwd === newPwd) {
+            Swal.showValidationMessage('新密碼不能與舊密碼相同！');
+            return false;
+          }
+          return { oldPwd, newPwd };
+        }
+      });
+
+      if (formValues) {
+        try {
+          Swal.fire({ title: '處理中', text: '正在更新您的密碼...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+          const res = await fetchWithAuth({
+            action: 'changePassword',
+            oldPassword: formValues.oldPwd,
+            newPassword: formValues.newPwd
+          });
+          
+          if (res.status === 'success') {
+            SysMsg.success('密碼變更成功', '請妥善保管您的新密碼！下一次登入時請使用新密碼。');
+          } else {
+            SysMsg.error('變更失敗', res.message);
+          }
+        } catch (err) {
+          if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
+        }
+      }
     }
 
     function setFormMode(mode) {
@@ -601,7 +662,6 @@
         const coachingTimeStr = String(item.coachingTime || "");
         
         if (cName === clientName && compName === companyName && oDate === onboardDate) {
-          // 只累加在當下表單設定日期（含）之前的紀錄
           if (!formCoachingDate || cDate <= formCoachingDate) {
              if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
                  dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
@@ -660,7 +720,6 @@
       return totalMins;
     }
 
-    // ★ 改由全域的 allSchedules 提取選項，並加入權限識別
     function renderHistoryDropdown() {
       const select = document.getElementById('historySelect');
       select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
@@ -668,7 +727,6 @@
       const uniqueMap = new Map();
       const isAdmin = currentUser && currentUser.role === 'admin';
 
-      // 由於 allSchedules 已按最新日期排序，Map 會自動保留第一筆最新資料
       allSchedules.forEach(item => {
         const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
         if (!uniqueMap.has(key)) uniqueMap.set(key, item);
@@ -677,7 +735,6 @@
       uniqueMap.forEach((item, key) => {
         const opt = document.createElement('option');
         opt.value = key;
-        // 如果是主管，額外在後面標記建立該個案的就服員名字
         const agentInfo = isAdmin ? ` (就服員: ${item.agentName})` : '';
         opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}${agentInfo}`;
         select.appendChild(opt);
@@ -699,10 +756,8 @@
         const phoneClean = String(matched.contactPhone || "").startsWith("'") ? String(matched.contactPhone).substring(1) : String(matched.contactPhone || "");
         document.getElementById('contactPhone').value = phoneClean;
         
-        // 不帶入歷史備註
         document.getElementById('remarks').value = "";
 
-        // ★ 一併帶入前次預計職場輔導時段設定
         const container = document.getElementById('timeRowsContainer');
         container.innerHTML = '';
         const coachingTimeStr = String(matched.coachingTime || "");
@@ -720,7 +775,7 @@
 
         checkDateSequence(); 
         updateCumulativeDuration(); 
-        calculateTotalDuration(); // 重算剛帶入的時段
+        calculateTotalDuration(); 
       }
     }
 
@@ -730,7 +785,6 @@
 
       if (!currentCompany) return;
 
-      // 也改為直接去 allSchedules 搜尋匹配
       const matched = allSchedules.find(item => item.companyName.toLowerCase() === currentCompany);
       if (matched) {
         if (!document.getElementById('workAddress').value) document.getElementById('workAddress').value = matched.workAddress;
@@ -841,7 +895,7 @@
           setFormMode('add');
           updateCumulativeDuration(); 
           
-          loadSchedules(); // 重刷紀錄
+          loadSchedules(); 
         } else {
           SysMsg.error('通報失敗', res.message);
         }
@@ -878,7 +932,6 @@
             item.originalIndex = idx;
           });
           
-          // ★ 生成新的選單並保留原本過濾內容
           renderHistoryDropdown();
           filterData(); 
         } else {
