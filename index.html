@@ -150,7 +150,6 @@
           <textarea id="remarks" placeholder="如有其他細節請在此說明..."></textarea>
         </div>
         
-        <!-- 新增：異動紀錄顯示區塊 -->
         <div class="form-group hidden" id="actionLogContainer">
           <label>📝 系統異動紀錄</label>
           <textarea id="actionLog" readonly style="background-color: #e9ecef; font-size: 13px; height: 80px;" placeholder="目前尚無修改紀錄"></textarea>
@@ -180,19 +179,8 @@
 
       <div style="overflow-x: auto;">
         <table>
-          <thead>
-            <tr>
-              <th>服務使用者</th>
-              <th>到職日</th>
-              <th>輔導日期/時段</th>
-              <th>本次時數</th>
-              <th>累計時數</th>
-              <th>事業單位/地址</th>
-              <th>聯絡人/電話</th>
-              <th>備註</th>
-              <th>異動紀錄</th>
-              <th>就服員</th>
-            </tr>
+          <!-- 表頭會由 JS 根據身分動態產生 -->
+          <thead id="dataTableHead">
           </thead>
           <tbody id="dataTableBody">
             <tr><td colspan="10" style="text-align: center;">載入中...</td></tr>
@@ -323,7 +311,7 @@
         badge.classList.add('edit');
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        actionLogContainer.classList.remove('hidden'); // 顯示異動紀錄
+        actionLogContainer.classList.remove('hidden'); 
         document.body.style.backgroundColor = '#ffe5e5'; 
         presetCard.classList.add('hidden');              
         coachingDateInput.readOnly = true;               
@@ -335,13 +323,13 @@
         badge.classList.remove('edit');
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
-        actionLogContainer.classList.add('hidden'); // 隱藏異動紀錄
+        actionLogContainer.classList.add('hidden'); 
         document.body.style.backgroundColor = '#f4f7f6'; 
         presetCard.classList.remove('hidden');           
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
         currentEditRecordId = null; 
-        document.getElementById('actionLog').value = ''; // 清空紀錄內容
+        document.getElementById('actionLog').value = ''; 
         
         fieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
       }
@@ -700,7 +688,7 @@
       document.getElementById('contactPhone').value = phoneClean;
       
       document.getElementById('remarks').value = item.remarks || "";
-      document.getElementById('actionLog').value = item.actionLog || ""; // ★ 帶入異動紀錄
+      document.getElementById('actionLog').value = item.actionLog || ""; 
       document.getElementById('dateSequenceWarning').classList.add('hidden'); 
 
       const container = document.getElementById('timeRowsContainer');
@@ -791,23 +779,55 @@
 
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
+      const thead = document.getElementById('dataTableHead');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      
       try {
         const res = await fetchWithAuth({ action: 'getSchedules' });
         if (res.status === 'success') {
           allSchedules = res.data;
+          
+          // ★ 依據輔導日期倒序排列，若同日則依據建立時間(ID)倒序
+          allSchedules.sort((a, b) => {
+            const dateA = new Date(a.coachingDate).getTime();
+            const dateB = new Date(b.coachingDate).getTime();
+            if (dateB !== dateA) return dateB - dateA;
+            return b.id - a.id;
+          });
+          
           renderTable(allSchedules);
         } else {
-          tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="${isAdmin ? 10 : 9}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
         }
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 10 : 9}" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
       }
     }
 
     function renderTable(data) {
+      const thead = document.getElementById('dataTableHead');
       const tbody = document.getElementById('dataTableBody');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const colCount = isAdmin ? 10 : 9;
+
+      // ★ 動態產生表頭，非主管隱藏異動紀錄
+      thead.innerHTML = `
+        <tr>
+          <th>服務使用者</th>
+          <th>到職日</th>
+          <th>輔導日期/時段</th>
+          <th>本次時數</th>
+          <th>累計時數</th>
+          <th>事業單位/地址</th>
+          <th>聯絡人/電話</th>
+          <th>備註</th>
+          ${isAdmin ? '<th>異動紀錄</th>' : ''}
+          <th>就服員</th>
+        </tr>
+      `;
+
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">目前尚無通報紀錄</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無通報紀錄</td></tr>`;
         return;
       }
 
@@ -820,6 +840,9 @@
         const cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins}分` : "0小時0分";
         
         const isCanceled = (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消'));
+        
+        // ★ 若是主管才產生異動紀錄欄位的內容
+        let actionLogCell = isAdmin ? `<td style="color:#666; font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>` : '';
 
         return `
         <tr class="clickable-row" onclick="populateFormFromRecord(${idx})" title="點擊載入此筆紀錄以修改重新送出">
@@ -831,7 +854,7 @@
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
-          <td style="color:#666; font-size:12px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>
+          ${actionLogCell}
           <td>${escapeHtml(item.agentName)}</td>
         </tr>
       `}).join('');
