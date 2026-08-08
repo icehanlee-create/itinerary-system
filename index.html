@@ -27,6 +27,8 @@
     .btn-secondary:hover { background-color: #5a6268; }
     .btn-warning { background-color: #ffc107; color: #000; font-size: 14px; padding: 6px 12px; width: auto; }
     .btn-warning:hover { background-color: #e0a800; }
+    .btn-info { background-color: #17a2b8; color: #fff; font-size: 14px; padding: 6px 12px; width: auto; }
+    .btn-info:hover { background-color: #138496; }
     .btn-add { background-color: #28a745; font-size: 13px; padding: 5px 10px; width: auto; margin-top: 5px; }
     .btn-add:hover { background-color: #218838; }
     .btn-remove { background-color: #dc3545; font-size: 13px; padding: 5px 10px; width: auto; }
@@ -76,8 +78,8 @@
           <span class="hint">電話: <span id="currentPhoneSpan"></span></span>
         </div>
         <div>
-          <!-- ★ 新增變更密碼按鈕 -->
-          <button onclick="openChangePassword()" class="btn-warning" style="margin-right: 10px;">🔑 變更密碼</button>
+          <!-- ★ 整合版：帳號設定按鈕 -->
+          <button onclick="openAccountSettings()" class="btn-info" style="margin-right: 10px;">⚙️ 帳號設定</button>
           <button onclick="logout()" class="btn-secondary">登出系統</button>
         </div>
       </div>
@@ -86,7 +88,7 @@
         📝 支持性輔導通報 
         <span id="modeBadge" class="badge-mode">【新增模式】</span>
         <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，返回新增模式</button>
-        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🗑️ 取消當日支持輔導</button>
+        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
       </h2>
 
       <div class="preset-card" id="presetCard">
@@ -106,7 +108,7 @@
           <div class="form-group">
             <label>到職日期</label>
             <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
-          </div>取
+          </div>
         </div>
 
         <div class="time-block-box">
@@ -297,57 +299,93 @@
       document.getElementById('loginPassword').value = '';
     }
 
-    // ★ 新增：變更密碼的視窗邏輯
-    async function openChangePassword() {
+    // ★ 新增：整合版的帳號設定視窗
+    async function openAccountSettings() {
       const { value: formValues } = await Swal.fire({
-        title: '🔑 變更密碼',
+        title: '⚙️ 帳號設定',
         html:
-          '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold;">舊密碼：</div>' +
-          '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請輸入目前的密碼">' +
-          '<div style="text-align:left; font-size:14px; margin-top:15px; margin-bottom:5px; font-weight:bold;">設定新密碼：</div>' +
-          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請設定新密碼">' +
-          '<div style="text-align:left; font-size:14px; margin-top:15px; margin-bottom:5px; font-weight:bold;">確認新密碼：</div>' +
+          '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:#0056b3;">📝 聯絡資訊</div>' +
+          '<div style="text-align:left; font-size:13px; margin-bottom:2px;">聯絡電話：</div>' +
+          `<input id="swal-input-phone" type="tel" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" value="${currentUser.phone || ''}" placeholder="請輸入聯絡電話">` +
+          '<div style="text-align:left; font-size:13px; margin-bottom:2px;">電子郵件 (Email)：</div>' +
+          `<input id="swal-input-email" type="email" class="swal2-input" style="margin-top:0; margin-bottom:20px; width:100%; box-sizing:border-box;" value="${currentUser.email || ''}" placeholder="請輸入電子郵件信箱">` +
+          
+          '<hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">' +
+          
+          '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:#d9534f;">🔑 變更密碼 <span style="font-size:12px; font-weight:normal; color:#666;">(若不修改請留空)</span></div>' +
+          '<div style="text-align:left; font-size:13px; margin-bottom:2px;">舊密碼：</div>' +
+          '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" placeholder="請輸入目前的密碼">' +
+          '<div style="text-align:left; font-size:13px; margin-bottom:2px;">新密碼：</div>' +
+          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" placeholder="請設定新密碼">' +
+          '<div style="text-align:left; font-size:13px; margin-bottom:2px;">確認新密碼：</div>' +
           '<input id="swal-input-confirm" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請再次輸入新密碼">',
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonColor: '#0056b3',
+        confirmButtonColor: '#17a2b8',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: '確認變更',
+        confirmButtonText: '儲存設定',
         cancelButtonText: '取消',
         preConfirm: () => {
+          const newPhone = document.getElementById('swal-input-phone').value.trim();
+          const newEmail = document.getElementById('swal-input-email').value.trim();
           const oldPwd = document.getElementById('swal-input-old').value;
           const newPwd = document.getElementById('swal-input-new').value;
           const confirmPwd = document.getElementById('swal-input-confirm').value;
 
-          if (!oldPwd || !newPwd || !confirmPwd) {
-            Swal.showValidationMessage('請完整填寫所有密碼欄位！');
+          if (!newPhone) {
+            Swal.showValidationMessage('聯絡電話不能為空！');
             return false;
           }
-          if (newPwd !== confirmPwd) {
-            Swal.showValidationMessage('新密碼與確認密碼不一致！');
-            return false;
+
+          // 判斷使用者是否正在嘗試變更密碼
+          const isChangingPassword = oldPwd || newPwd || confirmPwd;
+
+          if (isChangingPassword) {
+            if (!oldPwd || !newPwd || !confirmPwd) {
+              Swal.showValidationMessage('若要變更密碼，請完整填寫舊密碼、新密碼與確認密碼！');
+              return false;
+            }
+            if (newPwd !== confirmPwd) {
+              Swal.showValidationMessage('新密碼與確認密碼不一致！');
+              return false;
+            }
+            if (oldPwd === newPwd) {
+              Swal.showValidationMessage('新密碼不能與舊密碼相同！');
+              return false;
+            }
           }
-          if (oldPwd === newPwd) {
-            Swal.showValidationMessage('新密碼不能與舊密碼相同！');
-            return false;
-          }
-          return { oldPwd, newPwd };
+
+          return { newPhone, newEmail, oldPwd, newPwd };
         }
       });
 
       if (formValues) {
         try {
-          Swal.fire({ title: '處理中', text: '正在更新您的密碼...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+          Swal.fire({ title: '處理中', text: '正在更新您的帳號設定...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
           const res = await fetchWithAuth({
-            action: 'changePassword',
+            action: 'updateAccountSettings',
+            phone: formValues.newPhone,
+            email: formValues.newEmail,
             oldPassword: formValues.oldPwd,
             newPassword: formValues.newPwd
           });
           
           if (res.status === 'success') {
-            SysMsg.success('密碼變更成功', '請妥善保管您的新密碼！下一次登入時請使用新密碼。');
+            currentUser.phone = formValues.newPhone;
+            currentUser.email = formValues.newEmail;
+            
+            // 即時更新畫面上的聯絡資訊
+            document.getElementById('currentPhoneSpan').innerText = currentUser.phone;
+            document.getElementById('agentPhone').value = currentUser.phone;
+            
+            let successMsg = '您的聯絡資訊已更新完畢！';
+            if (formValues.newPwd) {
+              successMsg = '您的聯絡資訊與密碼已更新完畢！下一次登入時請使用新密碼。';
+            }
+            
+            SysMsg.success('設定更新成功', successMsg);
           } else {
-            SysMsg.error('變更失敗', res.message);
+            SysMsg.error('更新失敗', res.message);
           }
         } catch (err) {
           if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
@@ -374,7 +412,6 @@
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
         
-        // ★ 嚴格權限控管：只有主管 (admin) 才能在修改模式看到異動紀錄區塊
         if (currentUser && currentUser.role === 'admin') {
           actionLogContainer.classList.remove('hidden'); 
         } else {
