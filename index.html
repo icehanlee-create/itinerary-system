@@ -955,7 +955,7 @@
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 10 : 8; 
+      const colCount = isAdmin ? 11 : 9; 
       
       try {
         const res = await fetchWithAuth({ action: 'getSchedules' });
@@ -991,7 +991,7 @@
       const thead = document.getElementById('dataTableHead');
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 10 : 8;
+      const colCount = isAdmin ? 11 : 9;
 
       thead.innerHTML = `
         <tr>
@@ -1004,6 +1004,7 @@
           <th>聯絡人/電話</th>
           <th>備註</th>
           ${isAdmin ? '<th>異動紀錄</th><th>就服員</th>' : ''}
+          <th>操作</th>
         </tr>
       `;
 
@@ -1033,6 +1034,9 @@
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
           ${adminCells}
+          <td onclick="event.stopPropagation();">
+            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px;" onclick="copyRecordText(event, ${item.originalIndex})">📋 複製</button>
+          </td>
         </tr>
       `}).join('');
     }
@@ -1066,6 +1070,62 @@
 
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // ★ 新增：一鍵複製紀錄文字格式的功能
+    function copyRecordText(e, originalIndex) {
+      e.stopPropagation(); // 避免觸發列的點擊編輯事件
+
+      const item = allSchedules[originalIndex];
+      if (!item) return;
+
+      if (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消')) {
+        SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
+        return;
+      }
+
+      // 轉換時數格式： "X小時Y分" -> "X時YY分" (自動將分補齊兩位數)
+      const formatDuration = (durStr) => {
+        let h = 0, m = 0;
+        const hMatch = String(durStr).match(/(\d+)小時/);
+        const mMatch = String(durStr).match(/(\d+)分/);
+        if (hMatch) h = parseInt(hMatch[1], 10);
+        if (mMatch) m = parseInt(mMatch[1], 10);
+        return `${h}時${m.toString().padStart(2, '0')}分`;
+      };
+
+      const currentDurFormatted = formatDuration(item.totalDuration);
+      const cumDurFormatted = formatDuration(item.cumText);
+
+      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${item.coachingTime}），目前累積支持性輔導時數${cumDurFormatted}。`;
+
+      // 使用 execCommand 進行複製 (相容 iFrame 環境)
+      const textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: '📝 已成功複製輔導文字！',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        } else {
+          SysMsg.error('複製失敗', '無法自動複製，請手動複製。');
+        }
+      } catch (err) {
+        SysMsg.error('複製失敗', '您的瀏覽器不支援自動複製功能。');
+      }
+      document.body.removeChild(textArea);
     }
   </script>
 </body>
