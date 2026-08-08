@@ -86,7 +86,7 @@
         📝 支持性輔導通報 
         <span id="modeBadge" class="badge-mode">【新增模式】</span>
         <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，返回新增模式</button>
-        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
+        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🗑️ 取消當日支持輔導</button>
       </h2>
 
       <div class="preset-card" id="presetCard">
@@ -106,7 +106,7 @@
           <div class="form-group">
             <label>到職日期</label>
             <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
-          </div>
+          </div>取
         </div>
 
         <div class="time-block-box">
@@ -198,7 +198,7 @@
 
   <script>
     // ⚠️ 記得替換成你的最新 GAS Web App URL
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyJBpokUNZC4sjOb91S3IBxkJXZjucJ0qRuESGoUhyHBXhzFkbQyXZ3y5g_exBMeqW3Kg/exec"; 
+    const GAS_API_URL = "你的_GAS_WEB_APP_URL"; 
     
     let currentUser = null;
     let sessionToken = null;
@@ -373,7 +373,14 @@
         badge.classList.add('edit');
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        actionLogContainer.classList.remove('hidden'); 
+        
+        // ★ 嚴格權限控管：只有主管 (admin) 才能在修改模式看到異動紀錄區塊
+        if (currentUser && currentUser.role === 'admin') {
+          actionLogContainer.classList.remove('hidden'); 
+        } else {
+          actionLogContainer.classList.add('hidden'); 
+        }
+        
         document.body.style.backgroundColor = '#ffe5e5'; 
         presetCard.classList.add('hidden');              
         coachingDateInput.readOnly = true;               
