@@ -7,8 +7,8 @@
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
     .container { max-width: 950px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h2, h3 { color: #0056b3; }
-    .hidden { display: none; }
+    h2, h3 { color: #0056b3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
+    .hidden { display: none !important; }
     .form-group { margin-bottom: 12px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
@@ -21,6 +21,8 @@
     button:disabled { background-color: #cccccc; cursor: not-allowed; }
     .btn-secondary { background-color: #6c757d; font-size: 14px; padding: 6px 12px; width: auto; }
     .btn-secondary:hover { background-color: #5a6268; }
+    .btn-warning { background-color: #ffc107; color: #000; font-size: 14px; padding: 6px 12px; width: auto; }
+    .btn-warning:hover { background-color: #e0a800; }
     .btn-add { background-color: #28a745; font-size: 13px; padding: 5px 10px; width: auto; margin-top: 5px; }
     .btn-add:hover { background-color: #218838; }
     .btn-remove { background-color: #dc3545; font-size: 13px; padding: 5px 10px; width: auto; }
@@ -35,8 +37,12 @@
     tr.clickable-row:hover { background-color: #e8f4ff; }
     .search-box { margin-bottom: 15px; }
     .hint { font-size: 12px; color: #666; margin-top: 5px; }
-    .badge { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 5px; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 14px; margin-left: 5px; }
+    .badge-add { background: #28a745; color: white; }
+    .badge-edit { background: #dc3545; color: white; }
+    .badge-role { background: #ffc107; color: #000; font-size: 12px;}
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
+    .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -64,7 +70,11 @@
         <button onclick="logout()" class="btn-secondary">登出系統</button>
       </div>
 
-      <h2>📝 新增 / 修改行程通報通知</h2>
+      <h2 id="formTitle">
+        📝 行程通報 
+        <span id="modeBadge" class="badge badge-add">新增模式</span>
+        <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，切換回新增模式</button>
+      </h2>
 
       <div class="preset-card">
         <label>⚡ 快速選擇過往訪視對象 (由新到舊)</label>
@@ -93,10 +103,11 @@
               <input type="date" id="coachingDate" required>
             </div>
             <div class="form-group">
-              <label>⏰ 預計職場輔導時段設定</label>
+              <label>⏰ 預計職場輔導時段設定 (24小時制)</label>
               <div id="timeRowsContainer">
                 </div>
               <button type="button" class="btn-add" onclick="addTimeRow()">➕ 新增時段</button>
+              <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有重疊，請修正！</div>
               <div class="duration-display" id="totalDurationText">執行時間：0小時0分</div>
             </div>
           </div>
@@ -104,7 +115,7 @@
 
         <div class="grid">
           <div class="form-group">
-            <label>事業单位名稱</label>
+            <label>事業單位名稱</label>
             <input type="text" id="companyName" required oninput="onCompanyInput()" placeholder="例如：小杉文化公司">
           </div>
           <div class="form-group">
@@ -145,7 +156,7 @@
 
       <hr style="margin: 30px 0; border: 0; border-top: 2px dashed #ccc;">
 
-      <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge"></span></h3>
+      <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge badge-role"></span></h3>
       <div class="hint" style="margin-bottom: 8px;">💡 提示：點擊下方任意紀錄表格項目，即可將資料帶回上方表單重新修改與寄信！</div>
       <div class="search-box">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)">
@@ -174,26 +185,28 @@
   </div>
 
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyJBpokUNZC4sjOb91S3IBxkJXZjucJ0qRuESGoUhyHBXhzFkbQyXZ3y5g_exBMeqW3Kg/exec"; // 請替換為您的 Web App URL
+    // ⚠️ 記得替換成你的最新 GAS Web App URL
+    const GAS_API_URL = "你的_GAS_WEB_APP_URL"; 
     
     let currentUser = null;
     let sessionToken = null;
     let userHistoryList = [];
     let allSchedules = [];
+    let isEditMode = false; // 追蹤目前是否為修改重發模式
 
-    // 自動清理文字：除去所有空白，並把全形英數字/標點符號轉為半形 (備註欄位不處理)
+    // 自動清理文字：除去所有空白，並把全形英數字/標點符號轉為半形
     function cleanAndToHalfWidth(str, isRemarks = false) {
       if (!str) return "";
       let result = str.toString();
       if (!isRemarks) {
-        result = result.replace(/\s+/g, ""); // 移除所有空白 character
+        result = result.replace(/\s+/g, ""); 
       }
-      // 全形轉半形邏輯
       return result.replace(/[\uFF01-\uFF5E]/g, function(ch) {
         return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
       }).replace(/\u3000/g, " ");
     }
 
+    // 登入
     async function login() {
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
@@ -269,7 +282,35 @@
       document.getElementById('loginPassword').value = '';
     }
 
-    // --- 動態時間選擇與計算機制 ---
+    // --- 模式切換邏輯 ---
+    function setFormMode(mode) {
+      const badge = document.getElementById('modeBadge');
+      const switchBtn = document.getElementById('switchModeBtn');
+      isEditMode = (mode === 'edit');
+
+      if (isEditMode) {
+        badge.innerText = '修改重發模式';
+        badge.className = 'badge badge-edit';
+        switchBtn.classList.remove('hidden');
+      } else {
+        badge.innerText = '新增模式';
+        badge.className = 'badge badge-add';
+        switchBtn.classList.add('hidden');
+      }
+    }
+
+    function switchToAddMode() {
+      if (confirm('確定要切換回「新增模式」嗎？\n目前表單上未儲存的資料將會被清空遺失。')) {
+        document.getElementById('scheduleForm').reset();
+        document.getElementById('historySelect').value = '';
+        document.getElementById('agentName').value = currentUser.name;
+        document.getElementById('agentPhone').value = currentUser.phone;
+        initTimeRows();
+        setFormMode('add');
+      }
+    }
+
+    // --- 動態時間選擇與計算機制 (重疊判斷) ---
     function initTimeRows() {
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -278,6 +319,16 @@
 
     function addTimeRow(startVal = "", endVal = "") {
       const container = document.getElementById('timeRowsContainer');
+      
+      // 如果沒有指定時間，自動抓取上一行的結束時間作為新的開始時間
+      if (!startVal && !endVal) {
+        const endInputs = document.querySelectorAll('.end-time');
+        if (endInputs.length > 0) {
+          const lastEnd = endInputs[endInputs.length - 1].value;
+          if (lastEnd) startVal = lastEnd;
+        }
+      }
+
       const rowDiv = document.createElement('div');
       rowDiv.className = 'time-row';
       rowDiv.innerHTML = `
@@ -303,30 +354,64 @@
     function calculateTotalDuration() {
       const startInputs = document.querySelectorAll('.start-time');
       const endInputs = document.querySelectorAll('.end-time');
-      let totalMinutes = 0;
+      let intervals = [];
 
+      // 收集區間
       for (let i = 0; i < startInputs.length; i++) {
         const start = startInputs[i].value;
         const end = endInputs[i].value;
 
         if (start && end) {
-          const [sHours, sMins] = start.split(':').map(Number);
-          const [eHours, eMins] = end.split(':').map(Number);
+          const [sH, sM] = start.split(':').map(Number);
+          const [eH, eM] = end.split(':').map(Number);
+          let sMin = sH * 60 + sM;
+          let eMin = eH * 60 + eM;
 
-          let startTotal = sHours * 60 + sMins;
-          let endTotal = eHours * 60 + eMins;
-
-          if (endTotal > startTotal) {
-            totalMinutes += (endTotal - startTotal);
+          if (eMin > sMin) {
+            intervals.push({ start: sMin, end: eMin });
           }
         }
       }
 
-      const hours = Math.floor(totalMinutes / 60);
-      const mins = totalMinutes % 60;
-      const durationText = `${hours}小時${mins}分`;
-      document.getElementById('totalDurationText').innerText = `執行時間：${durationText}`;
-      return durationText;
+      // 依照開始時間排序
+      intervals.sort((a, b) => a.start - b.start);
+
+      let totalMinutes = 0;
+      let hasOverlap = false;
+
+      // 檢查重疊並合併計算
+      if (intervals.length > 0) {
+        let current = intervals[0];
+        for (let i = 1; i < intervals.length; i++) {
+          if (intervals[i].start < current.end) {
+            hasOverlap = true; // 發現重疊！
+            current.end = Math.max(current.end, intervals[i].end);
+          } else {
+            totalMinutes += (current.end - current.start);
+            current = intervals[i];
+          }
+        }
+        totalMinutes += (current.end - current.start);
+      }
+
+      const btn = document.getElementById('submitBtn');
+      const warningEl = document.getElementById('overlapWarning');
+
+      // 若有重疊，阻擋送出並顯示警告
+      if (hasOverlap) {
+        warningEl.classList.remove('hidden');
+        btn.disabled = true;
+        document.getElementById('totalDurationText').innerText = `執行時間：時段發生重疊，請修正！`;
+        return "錯誤";
+      } else {
+        warningEl.classList.add('hidden');
+        btn.disabled = false;
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const durationText = `${hours}小時${mins}分`;
+        document.getElementById('totalDurationText').innerText = `執行時間：${durationText}`;
+        return durationText;
+      }
     }
 
     function getFormattedTimeSlots() {
@@ -401,6 +486,9 @@
       const item = allSchedules[index];
       if (!item) return;
 
+      // 切換模式與UI
+      setFormMode('edit');
+
       document.getElementById('clientName').value = item.clientName;
       document.getElementById('onboardDate').value = formatDate(item.onboardDate);
       document.getElementById('coachingDate').value = formatDate(item.coachingDate);
@@ -431,11 +519,18 @@
     // 6. 送出通報
     async function submitSchedule(e) {
       e.preventDefault();
+      
+      // 確保沒有時間重疊錯誤
+      const totalDuration = calculateTotalDuration();
+      if (totalDuration === "錯誤") {
+        alert("時段設定有重疊，請修正後再送出！");
+        return;
+      }
+
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerText = '處理中，請稍候...';
 
-      const totalDuration = calculateTotalDuration();
       const coachingTimeStr = getFormattedTimeSlots();
 
       const payload = {
@@ -448,7 +543,7 @@
         workAddress: cleanAndToHalfWidth(document.getElementById('workAddress').value),
         contactPerson: cleanAndToHalfWidth(document.getElementById('contactPerson').value),
         contactPhone: cleanAndToHalfWidth(document.getElementById('contactPhone').value),
-        remarks: cleanAndToHalfWidth(document.getElementById('remarks').value, true), // 備註不刪空白
+        remarks: cleanAndToHalfWidth(document.getElementById('remarks').value, true), 
         totalDuration: totalDuration,
         agentName: currentUser.name,
         agentPhone: currentUser.phone
@@ -458,11 +553,14 @@
         const res = await fetchWithAuth(payload);
         if (res.status === 'success') {
           alert(res.message);
+          
+          // 送出成功後，恢復為新增模式
           document.getElementById('scheduleForm').reset();
           document.getElementById('historySelect').value = '';
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
           initTimeRows();
+          setFormMode('add');
           
           loadUserHistory();
           loadSchedules();
