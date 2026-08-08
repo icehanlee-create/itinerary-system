@@ -12,7 +12,7 @@
   <style>
     /* 預設背景色為淡青色，修改模式會切換為淡紅色 */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
-    .container { max-width: 950px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .container { max-width: 980px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2, h3 { color: #0056b3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
     .hidden { display: none !important; }
     .form-group { margin-bottom: 12px; }
@@ -37,7 +37,7 @@
     .preset-card { background-color: #eef6ff; padding: 15px; border-radius: 6px; border: 1px solid #b6d4fe; margin-bottom: 20px; }
     .time-block-box { background: #fff8e1; padding: 15px; border-radius: 6px; border: 1px solid #ffe082; margin-bottom: 15px; }
     .time-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 900px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
     th { background-color: #f2f2f2; }
     tr.clickable-row { cursor: pointer; }
@@ -117,7 +117,7 @@
           </div>
           <div class="form-group">
             <label>到職日期</label>
-            <input type="date" id="onboardDate" required onchange="checkDateSequence()">
+            <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
           </div>
         </div>
 
@@ -196,7 +196,8 @@
               <th>服務使用者</th>
               <th>到職日</th>
               <th>輔導日期/時段</th>
-              <th>執行時間</th>
+              <th>本次時數</th>
+              <th>累計時數</th>
               <th>事業單位/地址</th>
               <th>聯絡人/電話</th>
               <th>備註</th>
@@ -204,7 +205,7 @@
             </tr>
           </thead>
           <tbody id="dataTableBody">
-            <tr><td colspan="8" style="text-align: center;">載入中...</td></tr>
+            <tr><td colspan="9" style="text-align: center;">載入中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -220,7 +221,7 @@
     let userHistoryList = [];
     let allSchedules = [];
     let isEditMode = false;
-    let currentEditIndex = -1; // 記錄正在編輯的紀錄索引
+    let currentEditIndex = -1; 
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -342,7 +343,7 @@
         presetCard.classList.remove('hidden');           
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
-        currentEditIndex = -1; // 離開修改模式時清空索引
+        currentEditIndex = -1; 
       }
     }
 
@@ -365,7 +366,7 @@
           document.getElementById('dateSequenceWarning').classList.add('hidden');
           initTimeRows();
           setFormMode('add');
-          updateCumulativeDuration(); // 重置累計時數
+          updateCumulativeDuration(); 
         }
       });
     }
@@ -493,7 +494,7 @@
         warningEl.classList.remove('hidden');
         btn.disabled = true;
         document.getElementById('totalDurationText').innerText = `本次執行時間：格式錯誤`;
-        updateCumulativeDuration(); // 同步更新累計時數
+        updateCumulativeDuration(); 
         return "錯誤";
       } else {
         warningEl.classList.add('hidden');
@@ -502,7 +503,7 @@
         const mins = totalMinutes % 60;
         const durationText = `${hours}小時${mins}分`;
         document.getElementById('totalDurationText').innerText = `本次執行時間：${durationText}`;
-        updateCumulativeDuration(); // 同步更新累計時數
+        updateCumulativeDuration(); 
         return durationText;
       }
     }
@@ -519,7 +520,7 @@
       return slots.join('、');
     }
 
-    // --- 解析字串轉為分鐘 (例如 "1小時20分" -> 80) ---
+    // --- 解析字串轉為分鐘 (處理各種狀態與取消標記) ---
     function parseDurationToMinutes(durationStr) {
       if (!durationStr || durationStr.includes("錯誤") || durationStr.includes("取消")) return 0;
       let hours = 0, mins = 0;
@@ -530,36 +531,40 @@
       return hours * 60 + mins;
     }
 
-    // --- 計算並顯示累計總執行時間 ---
+    // --- 計算並顯示「畫面上」的累計總執行時間 ---
     function updateCumulativeDuration() {
       const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
       const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
+      const onboardDate = formatDate(document.getElementById('onboardDate').value);
       const displayEl = document.getElementById('cumulativeDurationText');
       
-      if (!clientName || !companyName) {
+      // 必須具備三要素才合計
+      if (!clientName || !companyName || !onboardDate) {
         displayEl.innerText = "累計總執行時間：---";
         return;
       }
 
       let historyMinutes = 0;
       
-      // 搜尋 allSchedules 表格資料進行加總
       allSchedules.forEach((item, idx) => {
-        // 如果在修改模式，要排除掉「目前正在編輯的這筆舊紀錄」避免重複計算
+        // 修改模式排除當前編輯的舊紀錄
         if (isEditMode && idx === currentEditIndex) return; 
+        // 排除取消的輔導紀錄
+        if (item.coachingTime === "取消輔導" || item.coachingTime.includes("取消")) return;
         
         const cName = cleanAndToHalfWidth(item.clientName).toLowerCase();
         const compName = cleanAndToHalfWidth(item.companyName).toLowerCase();
+        const oDate = formatDate(item.onboardDate);
         
-        if (cName === clientName && compName === companyName) {
+        // 嚴謹核對：姓名、到職日、事業單位 皆須一致
+        if (cName === clientName && compName === companyName && oDate === onboardDate) {
           historyMinutes += parseDurationToMinutes(item.totalDuration);
         }
       });
 
-      // 加上畫面上「本次」所輸入的時間
       const currentDurationText = document.getElementById('totalDurationText').innerText;
       let currentMinutes = 0;
-      if (currentDurationText.includes('小時')) {
+      if (currentDurationText.includes('小時') && !currentDurationText.includes('錯誤')) {
          const durStr = currentDurationText.replace('本次執行時間：', '');
          currentMinutes = parseDurationToMinutes(durStr);
       }
@@ -569,6 +574,31 @@
       const mins = totalMins % 60;
       
       displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
+    }
+
+    // --- 獨立計算某筆舊紀錄的累計時數 (供表格渲染使用) ---
+    function calculateCumulativeForRecord(record, allData) {
+      let totalMins = 0;
+      const targetDateStr = formatDate(record.coachingDate);
+      const rClient = cleanAndToHalfWidth(record.clientName).toLowerCase();
+      const rComp = cleanAndToHalfWidth(record.companyName).toLowerCase();
+      const rOnboard = formatDate(record.onboardDate);
+
+      allData.forEach(item => {
+        const iClient = cleanAndToHalfWidth(item.clientName).toLowerCase();
+        const iComp = cleanAndToHalfWidth(item.companyName).toLowerCase();
+        const iOnboard = formatDate(item.onboardDate);
+        const iCoachingDateStr = formatDate(item.coachingDate);
+
+        // 比對三條件且不可為取消
+        if (iClient === rClient && iOnboard === rOnboard && iComp === rComp && item.coachingTime !== "取消輔導") {
+          // 只加總輔導日在「該筆紀錄當天」或「之前」的時數
+          if (iCoachingDateStr <= targetDateStr) {
+            totalMins += parseDurationToMinutes(item.totalDuration);
+          }
+        }
+      });
+      return totalMins;
     }
 
     async function loadUserHistory() {
@@ -587,16 +617,17 @@
       const select = document.getElementById('historySelect');
       select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
 
+      // 加入到職日作為唯一鍵值，確保不會合併掉同名但在不同時期的服務紀錄
       const uniqueMap = new Map();
       userHistoryList.forEach(item => {
-        const key = `${item.clientName}_${item.companyName}`;
+        const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
         if (!uniqueMap.has(key)) uniqueMap.set(key, item);
       });
 
       uniqueMap.forEach((item, key) => {
         const opt = document.createElement('option');
         opt.value = key;
-        opt.innerText = `👤 ${item.clientName} | 🏢 ${item.companyName}`;
+        opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}`;
         select.appendChild(opt);
       });
     }
@@ -605,7 +636,7 @@
       const selectedKey = document.getElementById('historySelect').value;
       if (!selectedKey) return;
 
-      const matched = userHistoryList.find(item => `${item.clientName}_${item.companyName}` === selectedKey);
+      const matched = userHistoryList.find(item => `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey);
       if (matched) {
         document.getElementById('clientName').value = matched.clientName;
         document.getElementById('onboardDate').value = formatDate(matched.onboardDate);
@@ -615,14 +646,13 @@
         document.getElementById('contactPhone').value = matched.contactPhone;
         if(matched.remarks) document.getElementById('remarks').value = matched.remarks;
         checkDateSequence(); 
-        updateCumulativeDuration(); // 更新累計時數
+        updateCumulativeDuration(); 
       }
     }
 
     function onCompanyInput() {
       const currentCompany = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
-      
-      updateCumulativeDuration(); // 即時更新累計時數
+      updateCumulativeDuration(); 
 
       if (!currentCompany) return;
 
@@ -638,7 +668,7 @@
       const item = allSchedules[index];
       if (!item) return;
 
-      currentEditIndex = index; // 記錄當下正在編輯的紀錄 ID
+      currentEditIndex = index; 
       setFormMode('edit');
 
       document.getElementById('clientName').value = item.clientName;
@@ -667,7 +697,7 @@
       
       if (container.children.length === 0) initTimeRows();
 
-      updateCumulativeDuration(); // 計算扣除該筆紀錄後的累計時數
+      updateCumulativeDuration(); 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -725,7 +755,7 @@
           document.getElementById('agentPhone').value = currentUser.phone;
           initTimeRows();
           setFormMode('add');
-          updateCumulativeDuration(); // 重置累計時數
+          updateCumulativeDuration(); 
           
           loadUserHistory();
           loadSchedules();
@@ -748,28 +778,36 @@
           allSchedules = res.data;
           renderTable(allSchedules);
         } else {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
         }
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
       }
     }
 
     function renderTable(data) {
       const tbody = document.getElementById('dataTableBody');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">目前尚無通報紀錄</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">目前尚無通報紀錄</td></tr>';
         return;
       }
 
       tbody.innerHTML = data.map((item, idx) => {
         const phoneClean = (item.contactPhone || "").startsWith("'") ? item.contactPhone.substring(1) : item.contactPhone;
+        
+        // 算出這筆舊紀錄當天為止的累計時數
+        const cumulativeMins = calculateCumulativeForRecord(item, data);
+        const cumHours = Math.floor(cumulativeMins / 60);
+        const cumMins = cumulativeMins % 60;
+        const cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins}分` : "-";
+
         return `
         <tr class="clickable-row" onclick="populateFormFromRecord(${idx})" title="點擊載入此筆紀錄以修改重新送出">
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
           <td>${formatDate(item.onboardDate)}</td>
           <td>${formatDate(item.coachingDate)}<br><small style="color:${item.coachingTime==='取消輔導'?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small></td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
+          <td><span style="color:#17a2b8; font-weight:bold;">${cumText}</span></td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
