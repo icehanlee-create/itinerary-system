@@ -113,7 +113,7 @@
               <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
             </div>
             <div class="form-group">
-              <label>⏰ 預計職場輔導時段設定 (24小時制)</label>
+              <label>⏰ 預計職場輔導時段</label>
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
               
@@ -305,7 +305,6 @@
       const presetCard = document.getElementById('presetCard');
       const actionLogContainer = document.getElementById('actionLogContainer');
       
-      // 開放特定欄位編輯，只鎖定姓名、到職日、事業單位
       const fieldsToLock = ['clientName', 'onboardDate', 'companyName'];
       
       isEditMode = (mode === 'edit');
@@ -492,7 +491,6 @@
       const warningEl = document.getElementById('overlapWarning');
       const agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
 
-      // ★ 判斷目前時段是否跟該就服員的其他排程重疊，並直接阻擋
       let hasAgentOverlap = false;
       let overlappingRecordName = "";
       let overlappingRecordTime = "";
@@ -535,7 +533,6 @@
         agentOverlapWarningEl.classList.add('hidden');
       }
 
-      // 三種錯誤任一成立，即禁止送出
       if (hasTimeError || hasOverlap || hasAgentOverlap) {
         if (hasTimeError || hasOverlap) {
             warningEl.innerText = `⚠️ 警告：${errorMsg}`;
@@ -582,6 +579,7 @@
       return hours * 60 + mins;
     }
 
+    // --- 計算並顯示「畫面上」的累計總執行時間 ---
     function updateCumulativeDuration() {
       const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
       const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
@@ -594,7 +592,7 @@
         return;
       }
 
-      const dailyLatestMins = new Map();
+      let historyMinutes = 0;
       
       allSchedules.forEach((item) => {
         if (isEditMode && item.id === currentEditRecordId) return; 
@@ -606,20 +604,15 @@
         const coachingTimeStr = String(item.coachingTime || "");
         
         if (cName === clientName && compName === companyName && oDate === onboardDate) {
-          if (cDate === formCoachingDate) return; 
-
-          if (!dailyLatestMins.has(cDate)) {
-             if (coachingTimeStr === "取消輔導" || coachingTimeStr.includes("取消")) {
-                 dailyLatestMins.set(cDate, 0); 
-             } else {
-                 dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
+          // 只累加在當下表單設定日期（含）之前的紀錄
+          if (!formCoachingDate || cDate <= formCoachingDate) {
+             // 排除取消的狀態
+             if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
+                 historyMinutes += parseDurationToMinutes(item.totalDuration);
              }
           }
         }
       });
-
-      let historyMinutes = 0;
-      dailyLatestMins.forEach(mins => historyMinutes += mins);
 
       const currentDurationText = String(document.getElementById('totalDurationText').innerText);
       let currentMinutes = 0;
@@ -635,6 +628,7 @@
       displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
     }
 
+    // --- 獨立計算某筆紀錄的累計時數 (供表格渲染使用) ---
     function calculateCumulativeForRecord(recordIndex, allData) {
       const record = allData[recordIndex];
       const rClient = cleanAndToHalfWidth(record.clientName).toLowerCase();
@@ -643,9 +637,9 @@
       const targetDateStr = formatDate(record.coachingDate);
       const targetId = record.id; 
 
-      const dailyLatestMins = new Map();
+      let totalMins = 0;
 
-      for (let i = recordIndex; i < allData.length; i++) {
+      for (let i = 0; i < allData.length; i++) {
          const item = allData[i];
          const iClient = cleanAndToHalfWidth(item.clientName).toLowerCase();
          const iComp = cleanAndToHalfWidth(item.companyName).toLowerCase();
@@ -654,20 +648,19 @@
 
          if (iClient === rClient && iOnboard === rOnboard && iComp === rComp) {
             const cDate = formatDate(item.coachingDate);
-            if (cDate <= targetDateStr) {
-               if (!dailyLatestMins.has(cDate)) {
-                  if (coachingTimeStr === "取消輔導" || coachingTimeStr.includes("取消")) {
-                     dailyLatestMins.set(cDate, 0); 
-                  } else {
-                     dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
-                  }
+            if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
+               // 累加日期在該筆紀錄之前的所有資料
+               if (cDate < targetDateStr) {
+                  totalMins += parseDurationToMinutes(item.totalDuration);
+               } 
+               // 針對同一天如果有多筆，則用唯一隱藏ID(建檔時間戳)來判斷先後，只累加較早建立的紀錄
+               else if (cDate === targetDateStr && item.id <= targetId) {
+                  totalMins += parseDurationToMinutes(item.totalDuration);
                }
             }
          }
       }
 
-      let totalMins = 0;
-      dailyLatestMins.forEach(mins => totalMins += mins);
       return totalMins;
     }
 
