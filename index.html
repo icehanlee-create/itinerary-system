@@ -49,6 +49,7 @@
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .cumulative-display { font-weight: bold; color: #17a2b8; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
+    .warning-text { color: #d39e00; font-size: 13px; font-weight: bold; margin-top: 5px; }
     .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
     .swal2-html-container { font-size: 1.1rem !important; }
   </style>
@@ -109,14 +110,17 @@
           <div class="grid">
             <div class="form-group">
               <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden" style="display:inline; color:#dc3545;">(修改模式不可更改)</span></label>
-              <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
+              <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration(); calculateTotalDuration();">
               <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
             </div>
             <div class="form-group">
               <label>⏰ 預計職場輔導時段設定 (24小時制)</label>
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
+              
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤，請修正！</div>
+              <div id="agentOverlapWarning" class="warning-text hidden">⚠️ 提醒：您在此日期的這個時段，已經有安排其他輔導行程！</div>
+              
               <div class="duration-display" id="totalDurationText">本次執行時間：0小時0分</div>
               <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
             </div>
@@ -301,7 +305,6 @@
       const presetCard = document.getElementById('presetCard');
       const actionLogContainer = document.getElementById('actionLogContainer');
       
-      // ★ 開放特定欄位編輯，只鎖定姓名、到職日、事業單位 (與輔導日)
       const fieldsToLock = ['clientName', 'onboardDate', 'companyName'];
       
       isEditMode = (mode === 'edit');
@@ -432,6 +435,13 @@
       }
     }
 
+    function parseTimeToMinutes(timeStr) {
+      if(!timeStr) return 0;
+      const parts = timeStr.split(':');
+      if(parts.length !== 2) return 0;
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
     function calculateTotalDuration() {
       const startInputs = document.querySelectorAll('.start-time');
       const endInputs = document.querySelectorAll('.end-time');
@@ -479,6 +489,47 @@
 
       const btn = document.getElementById('submitBtn');
       const warningEl = document.getElementById('overlapWarning');
+      const agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
+
+      // ★ 判斷目前時段是否跟該就服員的其他排程重疊
+      let hasAgentOverlap = false;
+      const formDateStr = document.getElementById('coachingDate').value;
+
+      if (formDateStr && intervals.length > 0 && !hasTimeError && !hasOverlap) {
+         const targetDateStr = formatDate(formDateStr);
+         for (let i = 0; i < allSchedules.length; i++) {
+            let item = allSchedules[i];
+            if (isEditMode && item.id === currentEditRecordId) continue;
+            if (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消')) continue;
+            if (item.createdBy !== currentUser.username) continue; 
+            if (formatDate(item.coachingDate) !== targetDateStr) continue;
+
+            const timeSlots = item.coachingTime.split('、');
+            for (let slot of timeSlots) {
+               const parts = slot.split('-');
+               if (parts.length === 2) {
+                  const sM = parseTimeToMinutes(parts[0]);
+                  const eM = parseTimeToMinutes(parts[1]);
+                  for (let curr of intervals) {
+                     // 判斷重疊
+                     if (curr.start < eM && curr.end > sM) {
+                        hasAgentOverlap = true;
+                        break;
+                     }
+                  }
+               }
+               if (hasAgentOverlap) break;
+            }
+            if (hasAgentOverlap) break;
+         }
+      }
+
+      // 顯示就服員行程重疊提醒
+      if (hasAgentOverlap) {
+        agentOverlapWarningEl.classList.remove('hidden');
+      } else {
+        agentOverlapWarningEl.classList.add('hidden');
+      }
 
       if (hasTimeError || hasOverlap) {
         warningEl.innerText = `⚠️ 警告：${errorMsg}`;
@@ -674,7 +725,6 @@
       const item = allSchedules[originalIndex];
       if (!item) return;
 
-      // ★ 取消輔導防呆：如果是取消的資料，跳出提示並阻擋編輯
       const isCanceled = (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消'));
       if (isCanceled) {
         SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
@@ -787,7 +837,7 @@
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 10 : 8; // 動態計算欄位數
+      const colCount = isAdmin ? 10 : 8; 
       
       try {
         const res = await fetchWithAuth({ action: 'getSchedules' });
@@ -824,7 +874,6 @@
       const isAdmin = currentUser && currentUser.role === 'admin';
       const colCount = isAdmin ? 10 : 8;
 
-      // ★ 權限控管：只有主管才會顯示「異動紀錄」和「就服員」
       thead.innerHTML = `
         <tr>
           <th>服務使用者</th>
@@ -848,7 +897,6 @@
         const phoneClean = (item.contactPhone || "").startsWith("'") ? item.contactPhone.substring(1) : item.contactPhone;
         const isCanceled = (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消'));
         
-        // ★ 權限控管：主管才會顯示這兩格的內容
         let adminCells = isAdmin ? `
           <td style="color:#666; font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>
           <td>${escapeHtml(item.agentName)}</td>
