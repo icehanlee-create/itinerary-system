@@ -31,7 +31,7 @@
     .btn-info:hover { background-color: #138496; }
     .btn-add { background-color: #28a745; font-size: 13px; padding: 5px 10px; width: auto; margin-top: 5px; }
     .btn-add:hover { background-color: #218838; }
-    .btn-remove { background-color: #dc3545; font-size: 13px; padding: 5px 10px; width: auto; }
+    .btn-remove { background-color: #dc3545; color: #fff; font-size: 14px; padding: 6px 12px; width: auto; }
     .btn-remove:hover { background-color: #c82333; }
     .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
     .preset-card { background-color: #eef6ff; padding: 15px; border-radius: 6px; border: 1px solid #b6d4fe; margin-bottom: 20px; }
@@ -88,8 +88,8 @@
       <h2 id="formTitle">
         📝 支持性輔導通報 
         <span id="modeBadge" class="badge-mode">【新增模式】</span>
+        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🗑️ 取消當日支持輔導</button>
         <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，返回新增模式</button>
-        <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
       </h2>
 
       <div class="preset-card" id="presetCard">
@@ -952,7 +952,7 @@
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 10 : 8; 
+      const colCount = isAdmin ? 11 : 9; 
       
       try {
         const res = await fetchWithAuth({ action: 'getSchedules' });
@@ -988,7 +988,7 @@
       const thead = document.getElementById('dataTableHead');
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 10 : 8;
+      const colCount = isAdmin ? 11 : 9;
 
       thead.innerHTML = `
         <tr>
@@ -997,6 +997,7 @@
           <th>輔導日期/時段</th>
           <th>本次時數</th>
           <th>累計時數</th>
+          <th>操作</th>
           <th>事業單位/地址</th>
           <th>聯絡人/電話</th>
           <th>備註</th>
@@ -1019,18 +1020,15 @@
           <td>${escapeHtml(item.agentName)}</td>
         ` : '';
 
-        // ★ 複製按鈕直接整合於「累計時數」的儲存格內，並對齊最右側
         return `
         <tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改重新送出">
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
           <td>${formatDate(item.onboardDate)}</td>
           <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small></td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
-          <td>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <span style="color:#17a2b8; font-weight:bold; white-space: nowrap;">${item.cumText}</span>
-              <button type="button" class="btn-secondary" style="font-size:12px; padding:3px 6px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導資訊">📋 複製</button>
-            </div>
+          <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
+          <td onclick="event.stopPropagation();">
+            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導資訊">📋 複製</button>
           </td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
@@ -1071,7 +1069,7 @@
       return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    // ★ 複製文字格式轉換邏輯（0小時00分 格式）
+    // ★ 新增：一鍵複製紀錄文字格式的功能
     function copyRecordText(e, originalIndex) {
       e.stopPropagation(); // 避免觸發列的點擊編輯事件
 
@@ -1098,6 +1096,7 @@
 
       const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${item.coachingTime}），目前累積支持性輔導時數${cumDurFormatted}。`;
 
+      // 使用 execCommand 進行複製 (相容 iFrame 跨域環境)
       const textArea = document.createElement("textarea");
       textArea.value = textToCopy;
       textArea.style.position = "fixed";
