@@ -45,7 +45,6 @@
     .search-box { margin-bottom: 15px; }
     .hint { font-size: 12px; color: #666; margin-top: 5px; }
     
-    /* 模式標籤：改為非按鈕樣式 */
     .badge-mode { 
         padding: 4px 8px; 
         font-size: 16px; 
@@ -55,15 +54,15 @@
         border: 2px solid currentColor;
         border-radius: 4px;
         margin-left: 5px; 
-        cursor: default; /* 取消手型指標 */
+        cursor: default;
     }
     .badge-mode.edit { color: #dc3545; }
     
     .badge-role { background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 5px; }
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
+    .cumulative-display { font-weight: bold; color: #17a2b8; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
     
-    /* 自訂 SweetAlert2 的文字樣式 */
     .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
     .swal2-html-container { font-size: 1.1rem !important; }
   </style>
@@ -95,7 +94,6 @@
         <button onclick="logout()" class="btn-secondary">登出系統</button>
       </div>
 
-      <!-- 標題與模式切換按鈕 -->
       <h2 id="formTitle">
         📝 支持性輔導通報 
         <span id="modeBadge" class="badge-mode">【新增模式】</span>
@@ -103,7 +101,6 @@
         <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
       </h2>
 
-      <!-- 歷史紀錄選單 -->
       <div class="preset-card" id="presetCard">
         <label>⚡ 快速選擇過往訪視對象 (由新到舊)</label>
         <select id="historySelect" onchange="applyHistoryPreset()">
@@ -116,7 +113,7 @@
         <div class="grid">
           <div class="form-group">
             <label>服務使用者姓名</label>
-            <input type="text" id="clientName" required placeholder="例如：王大明">
+            <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration()">
           </div>
           <div class="form-group">
             <label>到職日期</label>
@@ -129,7 +126,6 @@
             <div class="form-group">
               <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden" style="display:inline; color:#dc3545;">(修改模式不可更改)</span></label>
               <input type="date" id="coachingDate" required onchange="checkDateSequence()">
-              <!-- 即時日期錯誤提示 -->
               <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
             </div>
             <div class="form-group">
@@ -137,7 +133,9 @@
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" onclick="addTimeRow()">➕ 新增時段</button>
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤，請修正！</div>
-              <div class="duration-display" id="totalDurationText">執行時間：0小時0分</div>
+              <!-- 執行時間顯示 -->
+              <div class="duration-display" id="totalDurationText">本次執行時間：0小時0分</div>
+              <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
             </div>
           </div>
         </div>
@@ -222,15 +220,14 @@
     let userHistoryList = [];
     let allSchedules = [];
     let isEditMode = false;
+    let currentEditIndex = -1; // 記錄正在編輯的紀錄索引
 
-    // 自訂的彈窗函數 (包裝 SweetAlert2)
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
       success: (title, text) => Swal.fire({ title: title, text: text, icon: 'success', confirmButtonColor: '#28a745' }),
       error: (title, text) => Swal.fire({ title: title, text: text, icon: 'error', confirmButtonColor: '#dc3545' })
     };
 
-    // 自動清理文字：除去所有空白，並把全形英數字/標點符號轉為半形
     function cleanAndToHalfWidth(str, isRemarks = false) {
       if (!str) return "";
       let result = str.toString();
@@ -242,7 +239,6 @@
       }).replace(/\u3000/g, " ");
     }
 
-    // 登入
     async function login() {
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
@@ -318,7 +314,6 @@
       document.getElementById('loginPassword').value = '';
     }
 
-    // --- 模式切換邏輯 (修改模式改為紅色背景) ---
     function setFormMode(mode) {
       const badge = document.getElementById('modeBadge');
       const switchBtn = document.getElementById('switchModeBtn');
@@ -334,7 +329,7 @@
         badge.classList.add('edit');
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        document.body.style.backgroundColor = '#ffe5e5'; // 切換為淡紅色底
+        document.body.style.backgroundColor = '#ffe5e5'; 
         presetCard.classList.add('hidden');              
         coachingDateInput.readOnly = true;               
         dateLockHint.classList.remove('hidden');
@@ -347,6 +342,7 @@
         presetCard.classList.remove('hidden');           
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
+        currentEditIndex = -1; // 離開修改模式時清空索引
       }
     }
 
@@ -366,9 +362,10 @@
           document.getElementById('historySelect').value = '';
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
-          document.getElementById('dateSequenceWarning').classList.add('hidden'); // 清除日期警告
+          document.getElementById('dateSequenceWarning').classList.add('hidden');
           initTimeRows();
           setFormMode('add');
+          updateCumulativeDuration(); // 重置累計時數
         }
       });
     }
@@ -390,12 +387,10 @@
       });
     }
 
-    // --- 即時日期順序檢查 ---
     function checkDateSequence() {
       const onboardDateVal = document.getElementById('onboardDate').value;
       const coachingDateVal = document.getElementById('coachingDate').value;
       const warningEl = document.getElementById('dateSequenceWarning');
-      const submitBtn = document.getElementById('submitBtn');
 
       if (onboardDateVal && coachingDateVal) {
         if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
@@ -407,7 +402,6 @@
       return true;
     }
 
-    // --- 動態時間選擇與計算機制 ---
     function initTimeRows() {
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -498,7 +492,8 @@
         warningEl.innerText = `⚠️ 警告：${errorMsg}`;
         warningEl.classList.remove('hidden');
         btn.disabled = true;
-        document.getElementById('totalDurationText').innerText = `執行時間：格式錯誤`;
+        document.getElementById('totalDurationText').innerText = `本次執行時間：格式錯誤`;
+        updateCumulativeDuration(); // 同步更新累計時數
         return "錯誤";
       } else {
         warningEl.classList.add('hidden');
@@ -506,7 +501,8 @@
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const durationText = `${hours}小時${mins}分`;
-        document.getElementById('totalDurationText').innerText = `執行時間：${durationText}`;
+        document.getElementById('totalDurationText').innerText = `本次執行時間：${durationText}`;
+        updateCumulativeDuration(); // 同步更新累計時數
         return durationText;
       }
     }
@@ -523,7 +519,58 @@
       return slots.join('、');
     }
 
-    // --- 歷史資料套用機制 ---
+    // --- 解析字串轉為分鐘 (例如 "1小時20分" -> 80) ---
+    function parseDurationToMinutes(durationStr) {
+      if (!durationStr || durationStr.includes("錯誤") || durationStr.includes("取消")) return 0;
+      let hours = 0, mins = 0;
+      const hMatch = durationStr.match(/(\d+)小時/);
+      const mMatch = durationStr.match(/(\d+)分/);
+      if (hMatch) hours = parseInt(hMatch[1], 10);
+      if (mMatch) mins = parseInt(mMatch[1], 10);
+      return hours * 60 + mins;
+    }
+
+    // --- 計算並顯示累計總執行時間 ---
+    function updateCumulativeDuration() {
+      const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
+      const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
+      const displayEl = document.getElementById('cumulativeDurationText');
+      
+      if (!clientName || !companyName) {
+        displayEl.innerText = "累計總執行時間：---";
+        return;
+      }
+
+      let historyMinutes = 0;
+      
+      // 搜尋 allSchedules 表格資料進行加總
+      allSchedules.forEach((item, idx) => {
+        // 如果在修改模式，要排除掉「目前正在編輯的這筆舊紀錄」避免重複計算
+        if (isEditMode && idx === currentEditIndex) return; 
+        
+        const cName = cleanAndToHalfWidth(item.clientName).toLowerCase();
+        const compName = cleanAndToHalfWidth(item.companyName).toLowerCase();
+        
+        if (cName === clientName && compName === companyName) {
+          historyMinutes += parseDurationToMinutes(item.totalDuration);
+        }
+      });
+
+      // 加上畫面上「本次」所輸入的時間
+      const currentDurationText = document.getElementById('totalDurationText').innerText;
+      let currentMinutes = 0;
+      if (currentDurationText.includes('小時')) {
+         const durStr = currentDurationText.replace('本次執行時間：', '');
+         currentMinutes = parseDurationToMinutes(durStr);
+      }
+
+      const totalMins = historyMinutes + currentMinutes;
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      
+      displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
+    }
+
     async function loadUserHistory() {
       try {
         const res = await fetchWithAuth({ action: 'getUserHistory' });
@@ -567,12 +614,16 @@
         document.getElementById('contactPerson').value = matched.contactPerson;
         document.getElementById('contactPhone').value = matched.contactPhone;
         if(matched.remarks) document.getElementById('remarks').value = matched.remarks;
-        checkDateSequence(); // 帶入後重新檢查日期
+        checkDateSequence(); 
+        updateCumulativeDuration(); // 更新累計時數
       }
     }
 
     function onCompanyInput() {
       const currentCompany = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
+      
+      updateCumulativeDuration(); // 即時更新累計時數
+
       if (!currentCompany) return;
 
       const matched = userHistoryList.find(item => item.companyName.toLowerCase() === currentCompany);
@@ -587,6 +638,7 @@
       const item = allSchedules[index];
       if (!item) return;
 
+      currentEditIndex = index; // 記錄當下正在編輯的紀錄 ID
       setFormMode('edit');
 
       document.getElementById('clientName').value = item.clientName;
@@ -600,7 +652,7 @@
       document.getElementById('contactPhone').value = phoneClean;
       
       document.getElementById('remarks').value = item.remarks || "";
-      document.getElementById('dateSequenceWarning').classList.add('hidden'); // 修改模式帶入不主動顯示錯誤
+      document.getElementById('dateSequenceWarning').classList.add('hidden'); 
 
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -615,6 +667,7 @@
       
       if (container.children.length === 0) initTimeRows();
 
+      updateCumulativeDuration(); // 計算扣除該筆紀錄後的累計時數
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -622,7 +675,6 @@
     async function submitSchedule(e, forcedSubmitType = null) {
       if (e) e.preventDefault();
 
-      // 日期防呆檢查
       if (!checkDateSequence()) {
         SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
         return;
@@ -673,6 +725,7 @@
           document.getElementById('agentPhone').value = currentUser.phone;
           initTimeRows();
           setFormMode('add');
+          updateCumulativeDuration(); // 重置累計時數
           
           loadUserHistory();
           loadSchedules();
