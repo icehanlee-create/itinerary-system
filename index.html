@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>行程安排通報系統</title>
+  <title>支持性輔導通報系統</title>
   
   <!-- 引入 SweetAlert2 美化彈窗套件 -->
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 
   <style>
-    /* 預設背景色為淡青色，修改模式會切換為淡黃色 */
+    /* 預設背景色為淡青色，修改模式會切換為淡紅色 */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
     .container { max-width: 950px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2, h3 { color: #0056b3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
@@ -44,10 +44,22 @@
     tr.clickable-row:hover { background-color: #e8f4ff; }
     .search-box { margin-bottom: 15px; }
     .hint { font-size: 12px; color: #666; margin-top: 5px; }
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 14px; margin-left: 5px; }
-    .badge-add { background: #28a745; color: white; }
-    .badge-edit { background: #dc3545; color: white; }
-    .badge-role { background: #17a2b8; color: white; font-size: 12px;}
+    
+    /* 模式標籤：改為非按鈕樣式 */
+    .badge-mode { 
+        padding: 4px 8px; 
+        font-size: 16px; 
+        font-weight: bold;
+        color: #0056b3; 
+        background: transparent;
+        border: 2px solid currentColor;
+        border-radius: 4px;
+        margin-left: 5px; 
+        cursor: default; /* 取消手型指標 */
+    }
+    .badge-mode.edit { color: #dc3545; }
+    
+    .badge-role { background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 5px; }
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
     
@@ -85,13 +97,13 @@
 
       <!-- 標題與模式切換按鈕 -->
       <h2 id="formTitle">
-        📝 行程通報 
-        <span id="modeBadge" class="badge badge-add">新增模式</span>
-        <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 切換回新增模式</button>
+        📝 支持性輔導通報 
+        <span id="modeBadge" class="badge-mode">【新增模式】</span>
+        <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，返回新增模式</button>
         <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🛑 取消當日支持輔導</button>
       </h2>
 
-      <!-- 歷史紀錄選單 (加入 id 方便隱藏) -->
+      <!-- 歷史紀錄選單 -->
       <div class="preset-card" id="presetCard">
         <label>⚡ 快速選擇過往訪視對象 (由新到舊)</label>
         <select id="historySelect" onchange="applyHistoryPreset()">
@@ -108,7 +120,7 @@
           </div>
           <div class="form-group">
             <label>到職日期</label>
-            <input type="date" id="onboardDate" required>
+            <input type="date" id="onboardDate" required onchange="checkDateSequence()">
           </div>
         </div>
 
@@ -116,7 +128,9 @@
           <div class="grid">
             <div class="form-group">
               <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden" style="display:inline; color:#dc3545;">(修改模式不可更改)</span></label>
-              <input type="date" id="coachingDate" required>
+              <input type="date" id="coachingDate" required onchange="checkDateSequence()">
+              <!-- 即時日期錯誤提示 -->
+              <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
             </div>
             <div class="form-group">
               <label>⏰ 預計職場輔導時段設定 (24小時制)</label>
@@ -171,7 +185,7 @@
 
       <hr style="margin: 30px 0; border: 0; border-top: 2px dashed #ccc;">
 
-      <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge badge-role"></span></h3>
+      <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge-role"></span></h3>
       <div class="hint" style="margin-bottom: 8px;">💡 提示：點擊下方任意紀錄表格項目，即可將資料帶回上方表單重新修改與寄信！</div>
       <div class="search-box">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)">
@@ -304,7 +318,7 @@
       document.getElementById('loginPassword').value = '';
     }
 
-    // --- 模式切換邏輯 ---
+    // --- 模式切換邏輯 (修改模式改為紅色背景) ---
     function setFormMode(mode) {
       const badge = document.getElementById('modeBadge');
       const switchBtn = document.getElementById('switchModeBtn');
@@ -316,17 +330,17 @@
       isEditMode = (mode === 'edit');
 
       if (isEditMode) {
-        badge.innerText = '修改重發模式';
-        badge.className = 'badge badge-edit';
+        badge.innerText = '【修改重發模式】';
+        badge.classList.add('edit');
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
-        document.body.style.backgroundColor = '#fff3cd'; 
+        document.body.style.backgroundColor = '#ffe5e5'; // 切換為淡紅色底
         presetCard.classList.add('hidden');              
         coachingDateInput.readOnly = true;               
         dateLockHint.classList.remove('hidden');
       } else {
-        badge.innerText = '新增模式';
-        badge.className = 'badge badge-add';
+        badge.innerText = '【新增模式】';
+        badge.classList.remove('edit');
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
         document.body.style.backgroundColor = '#f4f7f6'; 
@@ -337,7 +351,6 @@
     }
 
     function switchToAddMode() {
-      // 替換原生 confirm 為 SweetAlert2
       Swal.fire({
         title: '操作確認',
         text: '確定要切換回「新增模式」嗎？目前表單上未儲存的資料將會被清空遺失。',
@@ -353,6 +366,7 @@
           document.getElementById('historySelect').value = '';
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
+          document.getElementById('dateSequenceWarning').classList.add('hidden'); // 清除日期警告
           initTimeRows();
           setFormMode('add');
         }
@@ -374,6 +388,23 @@
           submitSchedule(null, 'cancel');
         }
       });
+    }
+
+    // --- 即時日期順序檢查 ---
+    function checkDateSequence() {
+      const onboardDateVal = document.getElementById('onboardDate').value;
+      const coachingDateVal = document.getElementById('coachingDate').value;
+      const warningEl = document.getElementById('dateSequenceWarning');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (onboardDateVal && coachingDateVal) {
+        if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
+          warningEl.classList.remove('hidden');
+          return false;
+        }
+      }
+      warningEl.classList.add('hidden');
+      return true;
     }
 
     // --- 動態時間選擇與計算機制 ---
@@ -536,6 +567,7 @@
         document.getElementById('contactPerson').value = matched.contactPerson;
         document.getElementById('contactPhone').value = matched.contactPhone;
         if(matched.remarks) document.getElementById('remarks').value = matched.remarks;
+        checkDateSequence(); // 帶入後重新檢查日期
       }
     }
 
@@ -568,6 +600,7 @@
       document.getElementById('contactPhone').value = phoneClean;
       
       document.getElementById('remarks').value = item.remarks || "";
+      document.getElementById('dateSequenceWarning').classList.add('hidden'); // 修改模式帶入不主動顯示錯誤
 
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -589,14 +622,10 @@
     async function submitSchedule(e, forcedSubmitType = null) {
       if (e) e.preventDefault();
 
-      // 日期防呆
-      const onboardDateVal = document.getElementById('onboardDate').value;
-      const coachingDateVal = document.getElementById('coachingDate').value;
-      if (onboardDateVal && coachingDateVal) {
-        if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
-          SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
-          return;
-        }
+      // 日期防呆檢查
+      if (!checkDateSequence()) {
+        SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
+        return;
       }
       
       const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
