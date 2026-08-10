@@ -61,7 +61,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>1.0.0-beta1</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta1)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -87,7 +87,7 @@
       </div>
 
       <h2 id="formTitle">
-        📝  
+        📝 支持性輔導通報 
         <span id="modeBadge" class="badge-mode">【新增模式】</span>
         <button type="button" id="cancelCoachingBtn" class="btn-remove hidden" onclick="cancelCoaching()">🗑️ 取消當日支持輔導</button>
         <button type="button" id="switchModeBtn" class="btn-warning hidden" onclick="switchToAddMode()">🔄 取消修改，返回新增模式</button>
@@ -283,7 +283,6 @@
     async function fetchWithAuth(payload) {
       payload.username = currentUser.username;
       payload.token = sessionToken;
-      // 提醒：後端 GAS_API_URL 必須確實驗證 token，不可僅依賴前端隱藏 UI
       const response = await fetch(GAS_API_URL, {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -310,7 +309,6 @@
     }
 
     async function openAccountSettings() {
-      // (保持原有 Account Settings 邏輯...)
       const { value: formValues } = await Swal.fire({
         title: '⚙️ 帳號設定',
         html:
@@ -514,7 +512,6 @@
       }
     }
 
-    // Helper: 將 HH:mm 轉換為分鐘數，增強錯誤處理
     function parseTimeToMinutes(timeStr) {
       if(!timeStr || typeof timeStr !== 'string') return -1;
       const parts = timeStr.split(':');
@@ -525,7 +522,6 @@
       return h * 60 + m;
     }
 
-    // Helper: 取得目前表單輸入的合法時間區段
     function getValidIntervalsFromUI() {
       const startInputs = document.querySelectorAll('.start-time');
       const endInputs = document.querySelectorAll('.end-time');
@@ -549,7 +545,6 @@
       return { intervals, hasError };
     }
 
-    // Helper: 檢查陣列內的區段是否自我重疊，並計算總時長
     function processSelfIntervals(intervals) {
       if (intervals.length === 0) return { totalMinutes: 0, hasOverlap: false };
       
@@ -578,15 +573,16 @@
       // 整理出當天「非本次編輯」且「非取消」的所有已排定時段
       let existingSlots = [];
       for (let item of allSchedules) {
+        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
         if (isEditMode && item.id === currentEditRecordId) continue;
-        if (item.coachingTime.includes('取消')) continue;
-        // 注意：假設後端有提供 createdBy，若沒有則使用 item.agentName 判斷
+        if (coachingTimeStr.includes('取消')) continue;
+        
         const itemCreator = item.createdBy || item.agentName; 
         const currentCreator = currentUser.username || currentUser.name;
         if (itemCreator !== currentCreator) continue; 
         if (formatDate(item.coachingDate) !== targetDateStr) continue;
 
-        const timeSlots = item.coachingTime.split('、');
+        const timeSlots = coachingTimeStr.split('、'); // ★ 安全轉換後再切割
         for (let slot of timeSlots) {
            const parts = slot.split('-');
            if (parts.length === 2) {
@@ -615,7 +611,6 @@
       return null;
     }
 
-    // 主管控流程：觸發時間計算與檢查 (分離 UI 更新與資料處理)
     function triggerCalculateDuration() {
       const btn = document.getElementById('submitBtn');
       const warningEl = document.getElementById('overlapWarning');
@@ -623,7 +618,6 @@
       const formDateStr = document.getElementById('coachingDate').value;
       const durationDisplay = document.getElementById('totalDurationText');
 
-      // 1. 取得並解析目前輸入
       const { intervals, hasError: hasInputError } = getValidIntervalsFromUI();
 
       if (hasInputError) {
@@ -631,14 +625,12 @@
         return "錯誤";
       }
 
-      // 2. 檢查自我重疊並計算時間
       const { totalMinutes, hasOverlap: hasSelfOverlap } = processSelfIntervals(intervals);
       if (hasSelfOverlap) {
         showErrorState("⚠️ 警告：表單內的時段設定有重疊，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
         return "錯誤";
       }
 
-      // 3. 檢查與其他行程的重疊
       if (formDateStr && intervals.length > 0) {
         const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), intervals);
         if (overlapResult) {
@@ -648,7 +640,6 @@
         }
       }
 
-      // 4. 若全數通過，更新正常狀態
       warningEl.classList.add('hidden');
       agentOverlapWarningEl.classList.add('hidden');
       btn.disabled = false;
@@ -698,7 +689,6 @@
         return;
       }
 
-      // 改良比對邏輯：建立較嚴謹的識別 Key
       const currentKey = `${clientName}_${companyName}_${onboardDate}`;
       const dailyLatestMins = new Map();
       
@@ -712,7 +702,7 @@
         
         if (itemKey === currentKey) {
           const cDate = formatDate(item.coachingDate);
-          const coachingTimeStr = String(item.coachingTime || "");
+          const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
           
           if (!formCoachingDate || cDate <= formCoachingDate) {
              if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
@@ -738,7 +728,6 @@
       displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
     }
 
-    // 計算列表中單筆歷史紀錄的累計時數，修正依賴 ID 的問題，改用嚴格時間戳判斷
     function calculateCumulativeForRecord(recordIndex, allData) {
       const record = allData[recordIndex];
       const rKey = `${cleanAndToHalfWidth(record.clientName).toLowerCase()}_${cleanAndToHalfWidth(record.companyName).toLowerCase()}_${formatDate(record.onboardDate)}`;
@@ -748,12 +737,11 @@
       for (let i = 0; i < allData.length; i++) {
          const item = allData[i];
          const itemKey = `${cleanAndToHalfWidth(item.clientName).toLowerCase()}_${cleanAndToHalfWidth(item.companyName).toLowerCase()}_${formatDate(item.onboardDate)}`;
-         const coachingTimeStr = String(item.coachingTime || "");
+         const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
 
          if (itemKey === rKey) {
             const cDate = formatDate(item.coachingDate);
             if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
-               // 同一日期的紀錄，如果在陣列中排在目標紀錄「後面」(更早建立)，則算入累計
                if (cDate < targetDateStr || (cDate === targetDateStr && i >= recordIndex)) {
                   totalMins += parseDurationToMinutes(item.totalDuration);
                }
@@ -771,8 +759,7 @@
       const isAdmin = currentUser && currentUser.role === 'admin';
 
       allSchedules.forEach(item => {
-        const coachingTimeStr = String(item.coachingTime || "");
-        // 修正：不將「取消輔導」的紀錄放入預設快捷清單中，以免帶出錯誤的狀態
+        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
         if (!coachingTimeStr.includes('取消')) {
            const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
@@ -793,7 +780,7 @@
       if (!selectedKey) return;
 
       const matched = allSchedules.find(item => 
-        !String(item.coachingTime).includes('取消') &&
+        !String(item.coachingTime || "").includes('取消') && // ★ 安全轉型防呆
         `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey
       );
       
@@ -810,7 +797,7 @@
 
         const container = document.getElementById('timeRowsContainer');
         container.innerHTML = '';
-        const coachingTimeStr = String(matched.coachingTime || "");
+        const coachingTimeStr = String(matched.coachingTime || ""); // ★ 安全轉型防呆
 
         if (coachingTimeStr) {
           const timeSlots = coachingTimeStr.split('、');
@@ -831,10 +818,9 @@
       updateCumulativeDuration(); 
 
       if (!currentCompany) return;
-      // 自動帶入時也可稍微防呆，找最近沒被取消的同公司紀錄
       const matched = allSchedules.find(item => 
          item.companyName.toLowerCase() === currentCompany && 
-         !String(item.coachingTime).includes('取消')
+         !String(item.coachingTime || "").includes('取消') // ★ 安全轉型防呆
       );
       if (matched) {
         if (!document.getElementById('workAddress').value) document.getElementById('workAddress').value = matched.workAddress;
@@ -848,7 +834,7 @@
       const item = allSchedules[originalIndex];
       if (!item) return;
 
-      const coachingTimeStr = String(item.coachingTime || "");
+      const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
       const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
       if (isCanceled) {
         SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
@@ -876,7 +862,7 @@
       container.innerHTML = '';
       
       if (!isCanceled) {
-        const timeSlots = coachingTimeStr.split('、');
+        const timeSlots = coachingTimeStr.split('、'); // ★ 確保這裡不會出錯
         timeSlots.forEach(slot => {
           const parts = slot.split('-');
           if (parts.length === 2) addTimeRow(parts[0], parts[1]);
@@ -914,7 +900,6 @@
       btn.disabled = true;
       btn.innerText = '處理中，請稍候...';
 
-      // 加入 XSS 基礎防護：使用 sanitizeInput 清理文字輸入
       const payload = {
         action: 'submitSchedule',
         submitType: submitType,
@@ -968,7 +953,6 @@
         if (res.status === 'success') {
           allSchedules = res.data;
           
-          // 確保列表排序是由新到舊 (由最新日期排在最上方)
           allSchedules.sort((a, b) => {
             const dateA = new Date(a.coachingDate).getTime();
             const dateB = new Date(b.coachingDate).getTime();
@@ -1007,7 +991,7 @@
           <th>輔導日期/時段</th>
           <th>本次時數</th>
           <th>累計時數</th>
-          <th>複製時數</th>
+          <th>操作</th>
           <th>事業單位/地址</th>
           <th>聯絡人/電話</th>
           <th>備註</th>
@@ -1022,7 +1006,7 @@
 
       tbody.innerHTML = data.map((item) => {
         const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
-        const coachingTimeStr = String(item.coachingTime || "");
+        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
         const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
         
         let adminCells = isAdmin ? `
@@ -1038,7 +1022,7 @@
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
           <td onclick="event.stopPropagation();">
-            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">複製</button>
+            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製</button>
           </td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
@@ -1085,7 +1069,8 @@
       const item = allSchedules[originalIndex];
       if (!item) return;
 
-      if (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消')) {
+      const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+      if (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消')) {
         SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
         return;
       }
@@ -1102,7 +1087,8 @@
       const currentDurFormatted = formatDuration(item.totalDuration);
       const cumDurFormatted = formatDuration(item.cumText);
 
-      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${item.coachingTime}），目前累積支持性輔導時數${cumDurFormatted}。`;
+      // 使用安全轉型後的 coachingTimeStr
+      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${coachingTimeStr}），目前累積支持性輔導時數${cumDurFormatted}。`;
 
       const textArea = document.createElement("textarea");
       textArea.value = textToCopy;
