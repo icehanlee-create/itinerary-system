@@ -128,7 +128,7 @@
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤或重疊，請修正！</div>
               <div id="agentOverlapWarning" class="error-text hidden">⚠️ 警告：此時段已有其他安排！</div>
               
-              <div class="duration-display" id="totalDurationText">本次執行時間：0小時0分</div>
+              <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
               <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
             </div>
           </div>
@@ -216,7 +216,6 @@
       error: (title, text) => Swal.fire({ title: title, text: text, icon: 'error', confirmButtonColor: '#dc3545' })
     };
 
-    // 改良：針對全形轉換，並新增基礎 sanitize 預防 XSS 
     function cleanAndToHalfWidth(str, isRemarks = false) {
       if (!str) return "";
       let result = str.toString();
@@ -228,7 +227,6 @@
       }).replace(/\u3000/g, " ").trim();
     }
 
-    // 防禦 XSS：過濾輸入資料的危險標籤
     function sanitizeInput(str) {
       if (!str) return "";
       return str.toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -646,7 +644,7 @@
       
       const hours = Math.floor(totalMinutes / 60);
       const mins = totalMinutes % 60;
-      const durationText = `${hours}小時${mins}分`;
+      const durationText = `${hours}小時${mins.toString().padStart(2, '0')}分`; // ★ 強制分鐘數補零
       durationDisplay.innerText = `本次執行時間：${durationText}`;
       updateCumulativeDuration(); 
       return durationText;
@@ -702,7 +700,7 @@
         
         if (itemKey === currentKey) {
           const cDate = formatDate(item.coachingDate);
-          const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+          const coachingTimeStr = String(item.coachingTime || ""); 
           
           if (!formCoachingDate || cDate <= formCoachingDate) {
              if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
@@ -725,7 +723,8 @@
       const totalMins = historyMinutes + currentMinutes;
       const hours = Math.floor(totalMins / 60);
       const mins = totalMins % 60;
-      displayEl.innerText = `累計總執行時間：${hours}小時${mins}分`;
+      // ★ 強制分鐘數補零
+      displayEl.innerText = `累計總執行時間：${hours}小時${mins.toString().padStart(2, '0')}分`;
     }
 
     function calculateCumulativeForRecord(recordIndex, allData) {
@@ -737,7 +736,7 @@
       for (let i = 0; i < allData.length; i++) {
          const item = allData[i];
          const itemKey = `${cleanAndToHalfWidth(item.clientName).toLowerCase()}_${cleanAndToHalfWidth(item.companyName).toLowerCase()}_${formatDate(item.onboardDate)}`;
-         const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+         const coachingTimeStr = String(item.coachingTime || ""); 
 
          if (itemKey === rKey) {
             const cDate = formatDate(item.coachingDate);
@@ -759,7 +758,7 @@
       const isAdmin = currentUser && currentUser.role === 'admin';
 
       allSchedules.forEach(item => {
-        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+        const coachingTimeStr = String(item.coachingTime || ""); 
         if (!coachingTimeStr.includes('取消')) {
            const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
@@ -780,7 +779,7 @@
       if (!selectedKey) return;
 
       const matched = allSchedules.find(item => 
-        !String(item.coachingTime || "").includes('取消') && // ★ 安全轉型防呆
+        !String(item.coachingTime || "").includes('取消') && 
         `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey
       );
       
@@ -797,7 +796,7 @@
 
         const container = document.getElementById('timeRowsContainer');
         container.innerHTML = '';
-        const coachingTimeStr = String(matched.coachingTime || ""); // ★ 安全轉型防呆
+        const coachingTimeStr = String(matched.coachingTime || ""); 
 
         if (coachingTimeStr) {
           const timeSlots = coachingTimeStr.split('、');
@@ -820,7 +819,7 @@
       if (!currentCompany) return;
       const matched = allSchedules.find(item => 
          item.companyName.toLowerCase() === currentCompany && 
-         !String(item.coachingTime || "").includes('取消') // ★ 安全轉型防呆
+         !String(item.coachingTime || "").includes('取消') 
       );
       if (matched) {
         if (!document.getElementById('workAddress').value) document.getElementById('workAddress').value = matched.workAddress;
@@ -834,7 +833,7 @@
       const item = allSchedules[originalIndex];
       if (!item) return;
 
-      const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+      const coachingTimeStr = String(item.coachingTime || ""); 
       const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
       if (isCanceled) {
         SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
@@ -862,7 +861,7 @@
       container.innerHTML = '';
       
       if (!isCanceled) {
-        const timeSlots = coachingTimeStr.split('、'); // ★ 確保這裡不會出錯
+        const timeSlots = coachingTimeStr.split('、'); 
         timeSlots.forEach(slot => {
           const parts = slot.split('-');
           if (parts.length === 2) addTimeRow(parts[0], parts[1]);
@@ -884,7 +883,7 @@
       }
       
       const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
-      let totalDuration = "0小時0分";
+      let totalDuration = "0小時00分";
       let coachingTimeStr = "取消輔導";
 
       if (submitType !== 'cancel') {
@@ -964,7 +963,8 @@
             const cumulativeMins = calculateCumulativeForRecord(idx, allSchedules);
             const cumHours = Math.floor(cumulativeMins / 60);
             const cumMins = cumulativeMins % 60;
-            item.cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins}分` : "0小時0分";
+            // ★ 強制分鐘數補零
+            item.cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins.toString().padStart(2, '0')}分` : "0小時00分";
             item.originalIndex = idx;
           });
           
@@ -1006,7 +1006,7 @@
 
       tbody.innerHTML = data.map((item) => {
         const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
-        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+        const coachingTimeStr = String(item.coachingTime || ""); 
         const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
         
         let adminCells = isAdmin ? `
@@ -1069,7 +1069,7 @@
       const item = allSchedules[originalIndex];
       if (!item) return;
 
-      const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+      const coachingTimeStr = String(item.coachingTime || ""); 
       if (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消')) {
         SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
         return;
@@ -1087,7 +1087,6 @@
       const currentDurFormatted = formatDuration(item.totalDuration);
       const cumDurFormatted = formatDuration(item.cumText);
 
-      // 使用安全轉型後的 coachingTimeStr
       const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${coachingTimeStr}），目前累積支持性輔導時數${cumDurFormatted}。`;
 
       const textArea = document.createElement("textarea");
