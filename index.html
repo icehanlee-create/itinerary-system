@@ -8,6 +8,10 @@
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 
+  <!-- ★ 新增：引入 Flatpickr 時間套件 CSS 與 JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
     .container { max-width: 980px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -65,7 +69,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta2)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta3)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -495,13 +499,34 @@
       }
       const rowDiv = document.createElement('div');
       rowDiv.className = 'time-row';
+      
+      // ★ 改良：將原先的 type="time" 改為 type="text"，避免行動裝置原生鍵盤介入
       rowDiv.innerHTML = `
-        <input type="time" class="start-time" value="${startVal}" onchange="triggerCalculateDuration()" required>
+        <input type="text" class="start-time" value="${startVal}" placeholder="--:--" style="text-align: center; cursor: pointer; background-color: #fff;" required>
         至
-        <input type="time" class="end-time" value="${endVal}" onchange="triggerCalculateDuration()" required>
+        <input type="text" class="end-time" value="${endVal}" placeholder="--:--" style="text-align: center; cursor: pointer; background-color: #fff;" required>
         <button type="button" class="btn-remove" onclick="removeTimeRow(this)">✕</button>
       `;
       container.appendChild(rowDiv);
+
+      // ★ 初始化 Flatpickr 套件
+      const flatpickrConfig = {
+        enableTime: true,        // 啟用時間選擇
+        noCalendar: true,        // 隱藏日期日曆
+        dateFormat: "H:i",       // 時間格式
+        time_24hr: true,         // 強制 24 小時制
+        disableMobile: true,     // 強制行動裝置也使用此介面 (重要防呆，避免跳出原生 12H 鍵盤)
+        minuteIncrement: 5,      // 以 5 分鐘為間距
+        allowInput: true,        // 允許手動輸入
+        onChange: function() {   // 選擇時間後自動觸發時數計算
+          triggerCalculateDuration();
+        }
+      };
+
+      // 對剛新增的兩個輸入框綁定套件
+      flatpickr(rowDiv.querySelector('.start-time'), flatpickrConfig);
+      flatpickr(rowDiv.querySelector('.end-time'), flatpickrConfig);
+
       triggerCalculateDuration();
     }
 
