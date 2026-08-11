@@ -53,6 +53,10 @@
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .cumulative-display { font-weight: bold; color: #17a2b8; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
+    
+    /* ★ 新增：群組安置的友善藍色提示樣式 */
+    .group-warning-text { color: #0056b3; background-color: #eef6ff; padding: 8px 12px; border: 1px solid #b6d4fe; border-radius: 4px; font-size: 13px; font-weight: bold; margin-top: 5px; line-height: 1.4; }
+    
     .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
     .swal2-html-container { font-size: 1.1rem !important; }
   </style>
@@ -61,7 +65,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta1)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta2)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -105,7 +109,7 @@
         <div class="grid">
           <div class="form-group">
             <label>服務使用者姓名</label>
-            <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration()">
+            <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration(); triggerCalculateDuration();">
           </div>
           <div class="form-group">
             <label>到職日期</label>
@@ -126,7 +130,7 @@
               <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
               
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤或重疊，請修正！</div>
-              <div id="agentOverlapWarning" class="error-text hidden">⚠️ 警告：此時段已有其他安排！</div>
+              <div id="agentOverlapWarning" class="error-text hidden"></div>
               
               <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
               <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
@@ -209,6 +213,7 @@
     let allSchedules = [];
     let isEditMode = false;
     let currentEditRecordId = null; 
+    let currentOverlapState = null; // ★ 記錄群組安置狀態
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -564,14 +569,13 @@
       return { totalMinutes, hasOverlap };
     }
 
-    // Helper: 檢查與資料庫中同一位就服員當天的其他行程是否重疊
-    function checkAgentScheduleOverlap(targetDateStr, newIntervals) {
+    // ★ 檢查行程重疊：區分「同一人重疊」與「不同人群組安置重疊」
+    function checkAgentScheduleOverlap(targetDateStr, newIntervals, currentClientName) {
       if (!targetDateStr || newIntervals.length === 0) return null;
 
-      // 整理出當天「非本次編輯」且「非取消」的所有已排定時段
       let existingSlots = [];
       for (let item of allSchedules) {
-        const coachingTimeStr = String(item.coachingTime || ""); // ★ 安全轉型防呆
+        const coachingTimeStr = String(item.coachingTime || ""); 
         if (isEditMode && item.id === currentEditRecordId) continue;
         if (coachingTimeStr.includes('取消')) continue;
         
@@ -580,7 +584,7 @@
         if (itemCreator !== currentCreator) continue; 
         if (formatDate(item.coachingDate) !== targetDateStr) continue;
 
-        const timeSlots = coachingTimeStr.split('、'); // ★ 安全轉換後再切割
+        const timeSlots = coachingTimeStr.split('、'); 
         for (let slot of timeSlots) {
            const parts = slot.split('-');
            if (parts.length === 2) {
@@ -594,19 +598,25 @@
         }
       }
 
-      // 交叉比對所有新輸入區段 vs 所有現存區段
+      let groupOverlapResult = null;
+
       for (let newSlot of newIntervals) {
         for (let existSlot of existingSlots) {
-          // 判斷重疊的數學條件：(新開始 < 舊結束) AND (新結束 > 舊開始)
           if (newSlot.start < existSlot.end && newSlot.end > existSlot.start) {
-            return {
-              clientName: existSlot.clientName,
-              timeStr: existSlot.timeStr
-            };
+            const existClientLower = cleanAndToHalfWidth(existSlot.clientName).toLowerCase();
+            const isSamePerson = (existClientLower === currentClientName);
+            
+            if (isSamePerson) {
+              return { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: true }; // 優先回傳嚴重錯誤
+            } else {
+              if (!groupOverlapResult) {
+                groupOverlapResult = { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: false };
+              }
+            }
           }
         }
       }
-      return null;
+      return groupOverlapResult;
     }
 
     function triggerCalculateDuration() {
@@ -615,6 +625,9 @@
       const agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
       const formDateStr = document.getElementById('coachingDate').value;
       const durationDisplay = document.getElementById('totalDurationText');
+      const currentClientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
+
+      currentOverlapState = null; 
 
       const { intervals, hasError: hasInputError } = getValidIntervalsFromUI();
 
@@ -630,21 +643,33 @@
       }
 
       if (formDateStr && intervals.length > 0) {
-        const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), intervals);
+        const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), intervals, currentClientName);
         if (overlapResult) {
-          const msg = `⚠️ 警告：您在此日期與【${escapeHtml(overlapResult.clientName)}】已有安排輔導 (${escapeHtml(overlapResult.timeStr)})，禁止重複排程！`;
-          showErrorState(msg, agentOverlapWarningEl, durationDisplay, btn, warningEl);
-          return "錯誤";
+          if (overlapResult.isSamePerson) {
+            const msg = `⚠️ 警告：您在此日期與【${escapeHtml(overlapResult.clientName)}】已有安排輔導 (${escapeHtml(overlapResult.timeStr)})，禁止重複排程！`;
+            agentOverlapWarningEl.className = 'error-text';
+            showErrorState(msg, agentOverlapWarningEl, durationDisplay, btn, warningEl);
+            return "錯誤";
+          } else {
+            currentOverlapState = overlapResult; 
+          }
         }
       }
 
+      if (currentOverlapState) {
+        agentOverlapWarningEl.innerHTML = `💡提示：您在此時段已有安排【${escapeHtml(currentOverlapState.clientName)}】。若本次為『群組安置』，可繼續送出通報。`;
+        agentOverlapWarningEl.className = 'group-warning-text';
+        agentOverlapWarningEl.classList.remove('hidden');
+      } else {
+        agentOverlapWarningEl.classList.add('hidden');
+      }
+
       warningEl.classList.add('hidden');
-      agentOverlapWarningEl.classList.add('hidden');
       btn.disabled = false;
       
       const hours = Math.floor(totalMinutes / 60);
       const mins = totalMinutes % 60;
-      const durationText = `${hours}小時${mins.toString().padStart(2, '0')}分`; // ★ 強制分鐘數補零
+      const durationText = `${hours}小時${mins.toString().padStart(2, '0')}分`;
       durationDisplay.innerText = `本次執行時間：${durationText}`;
       updateCumulativeDuration(); 
       return durationText;
@@ -723,7 +748,6 @@
       const totalMins = historyMinutes + currentMinutes;
       const hours = Math.floor(totalMins / 60);
       const mins = totalMins % 60;
-      // ★ 強制分鐘數補零
       displayEl.innerText = `累計總執行時間：${hours}小時${mins.toString().padStart(2, '0')}分`;
     }
 
@@ -747,6 +771,7 @@
             }
          }
       }
+
       return totalMins;
     }
 
@@ -829,7 +854,8 @@
       }
     }
 
-    function populateFormFromRecord(originalIndex) {
+    // ★ 總表防護機制 (Dirty Check)
+    async function populateFormFromRecord(originalIndex) {
       const item = allSchedules[originalIndex];
       if (!item) return;
 
@@ -838,6 +864,26 @@
       if (isCanceled) {
         SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
         return;
+      }
+
+      // 如果是在新增模式，檢查是否有輸入資料，有則跳出確認警告
+      if (!isEditMode) {
+        const cName = document.getElementById('clientName').value.trim();
+        const comp = document.getElementById('companyName').value.trim();
+        const cDate = document.getElementById('coachingDate').value;
+        if (cName || comp || cDate) {
+          const result = await Swal.fire({
+            title: '⚠️ 確定要載入舊資料嗎？',
+            text: '您目前表單上還有尚未送出的新增資料，載入舊紀錄將會清空並覆蓋這些內容！',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '確定放棄並載入',
+            cancelButtonText: '取消'
+          });
+          if (!result.isConfirmed) return; // 使用者按取消，中止載入
+        }
       }
 
       currentEditRecordId = item.id; 
@@ -889,9 +935,27 @@
       if (submitType !== 'cancel') {
         totalDuration = triggerCalculateDuration();
         if (totalDuration === "錯誤") {
-          SysMsg.error('排程錯誤', '時段設定有錯誤或與其他對象行程重疊，請修正後再送出！');
+          SysMsg.error('排程錯誤', '時段設定有錯誤或與同一對象行程重疊，請修正後再送出！');
           return;
         }
+
+        // ★ 群組安置的防呆二次確認
+        if (currentOverlapState) {
+          const confirmRes = await Swal.fire({
+            title: '⚠️ 偵測到行程重疊',
+            html: `系統發現您在此時段已有安排其他服務對象【<b>${escapeHtml(currentOverlapState.clientName)}</b>】。<br><br>請問這是一次「群組安置」（多人同梯次）嗎？`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '確定是群組安置，送出！',
+            cancelButtonText: '返回修改時間'
+          });
+          if (!confirmRes.isConfirmed) {
+            return; // 使用者按取消，中止送出
+          }
+        }
+
         coachingTimeStr = getFormattedTimeSlots();
       }
 
@@ -963,7 +1027,6 @@
             const cumulativeMins = calculateCumulativeForRecord(idx, allSchedules);
             const cumHours = Math.floor(cumulativeMins / 60);
             const cumMins = cumulativeMins % 60;
-            // ★ 強制分鐘數補零
             item.cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins.toString().padStart(2, '0')}分` : "0小時00分";
             item.originalIndex = idx;
           });
@@ -1081,7 +1144,7 @@
         const mMatch = String(durStr).match(/(\d+)分/);
         if (hMatch) h = parseInt(hMatch[1], 10);
         if (mMatch) m = parseInt(mMatch[1], 10);
-        return `${h}小時${m.toString().padStart(2, '0')}分`;
+        return `${h}時${m.toString().padStart(2, '0')}分`;
       };
 
       const currentDurFormatted = formatDuration(item.totalDuration);
