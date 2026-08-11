@@ -8,10 +8,6 @@
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 
-  <!-- ★ 新增：引入 Flatpickr 時間套件 CSS 與 JS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
     .container { max-width: 980px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -42,7 +38,11 @@
     .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
     .preset-card { background-color: #eef6ff; padding: 15px; border-radius: 6px; border: 1px solid #b6d4fe; margin-bottom: 20px; }
     .time-block-box { background: #fff8e1; padding: 15px; border-radius: 6px; border: 1px solid #ffe082; margin-bottom: 15px; }
-    .time-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .time-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    
+    /* ★ 新增：時間下拉選單的美化樣式 */
+    .time-select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; background-color: #fff; cursor: pointer; text-align: center; width: 65px; font-weight: bold; }
+    
     table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
     th { background-color: #f2f2f2; }
@@ -57,8 +57,6 @@
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .cumulative-display { font-weight: bold; color: #17a2b8; margin-top: 5px; font-size: 14px; }
     .error-text { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 5px; }
-    
-    /* ★ 新增：群組安置的友善藍色提示樣式 */
     .group-warning-text { color: #0056b3; background-color: #eef6ff; padding: 8px 12px; border: 1px solid #b6d4fe; border-radius: 4px; font-size: 13px; font-weight: bold; margin-top: 5px; line-height: 1.4; }
     
     .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
@@ -129,7 +127,7 @@
               <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
             </div>
             <div class="form-group">
-              <label>⏰ 預計職場輔導時段</label>
+              <label>⏰ 預計職場輔導時段 <span class="hint">(下拉選單模式)</span></label>
               <div id="timeRowsContainer"></div>
               <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
               
@@ -217,7 +215,7 @@
     let allSchedules = [];
     let isEditMode = false;
     let currentEditRecordId = null; 
-    let currentOverlapState = null; // ★ 記錄群組安置狀態
+    let currentOverlapState = null; 
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -482,6 +480,7 @@
       return true;
     }
 
+    // ★ 核心改動：改為雙下拉選單 (小時 與 分鐘)
     function initTimeRows() {
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -491,42 +490,54 @@
     function addTimeRow(startVal = "", endVal = "") {
       const container = document.getElementById('timeRowsContainer');
       if (!startVal && !endVal) {
-        const endInputs = document.querySelectorAll('.end-time');
-        if (endInputs.length > 0) {
-          const lastEnd = endInputs[endInputs.length - 1].value;
-          if (lastEnd) startVal = lastEnd;
+        // 若沒有預設值，去抓畫面上最後一列的結束時間當作這列的開始時間
+        const endHours = document.querySelectorAll('.end-hour');
+        const endMins = document.querySelectorAll('.end-minute');
+        if (endHours.length > 0) {
+          const h = endHours[endHours.length - 1].value;
+          const m = endMins[endMins.length - 1].value;
+          if (h && m) startVal = `${h}:${m}`;
         }
       }
+
+      let sh = "", sm = "", eh = "", em = "";
+      if (startVal) {
+        const parts = startVal.split(':');
+        sh = parts[0]; sm = parts[1];
+      }
+      if (endVal) {
+        const parts = endVal.split(':');
+        eh = parts[0]; em = parts[1];
+      }
+
+      // 動態產生選單的 Helper 函數
+      const createSelect = (className, max, selectedVal) => {
+        let html = `<select class="${className} time-select" onchange="triggerCalculateDuration()" required>`;
+        html += `<option value="" disabled ${!selectedVal ? 'selected' : ''}>--</option>`;
+        for(let i = 0; i < max; i++){
+            let val = i.toString().padStart(2, '0');
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
+        }
+        html += `</select>`;
+        return html;
+      };
+
       const rowDiv = document.createElement('div');
       rowDiv.className = 'time-row';
       
-      // ★ 改良：將原先的 type="time" 改為 type="text"，避免行動裝置原生鍵盤介入
       rowDiv.innerHTML = `
-        <input type="text" class="start-time" value="${startVal}" placeholder="--:--" style="text-align: center; cursor: pointer; background-color: #fff;" required>
-        至
-        <input type="text" class="end-time" value="${endVal}" placeholder="--:--" style="text-align: center; cursor: pointer; background-color: #fff;" required>
-        <button type="button" class="btn-remove" onclick="removeTimeRow(this)">✕</button>
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('start-hour', 24, sh)} <span style="font-weight:bold; color:#555;">時</span> 
+            ${createSelect('start-minute', 60, sm)} <span style="font-weight:bold; color:#555;">分</span>
+        </div>
+        <span style="margin: 0 8px; font-weight:bold; color:#777;">至</span>
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('end-hour', 24, eh)} <span style="font-weight:bold; color:#555;">時</span> 
+            ${createSelect('end-minute', 60, em)} <span style="font-weight:bold; color:#555;">分</span>
+        </div>
+        <button type="button" class="btn-remove" style="margin-left: 5px;" onclick="removeTimeRow(this)">✕</button>
       `;
       container.appendChild(rowDiv);
-
-      // ★ 初始化 Flatpickr 套件
-      const flatpickrConfig = {
-        enableTime: true,        // 啟用時間選擇
-        noCalendar: true,        // 隱藏日期日曆
-        dateFormat: "H:i",       // 時間格式
-        time_24hr: true,         // 強制 24 小時制
-        disableMobile: true,     // 強制行動裝置也使用此介面 (重要防呆，避免跳出原生 12H 鍵盤)
-        minuteIncrement: 5,      // 以 5 分鐘為間距
-        allowInput: true,        // 允許手動輸入
-        onChange: function() {   // 選擇時間後自動觸發時數計算
-          triggerCalculateDuration();
-        }
-      };
-
-      // 對剛新增的兩個輸入框綁定套件
-      flatpickr(rowDiv.querySelector('.start-time'), flatpickrConfig);
-      flatpickr(rowDiv.querySelector('.end-time'), flatpickrConfig);
-
       triggerCalculateDuration();
     }
 
@@ -540,6 +551,39 @@
       }
     }
 
+    // 取得選單的值並驗證
+    function getValidIntervalsFromUI() {
+      const sHours = document.querySelectorAll('.start-hour');
+      const sMins = document.querySelectorAll('.start-minute');
+      const eHours = document.querySelectorAll('.end-hour');
+      const eMins = document.querySelectorAll('.end-minute');
+      
+      let intervals = [];
+      let hasError = false;
+
+      for (let i = 0; i < sHours.length; i++) {
+        const sh = sHours[i].value;
+        const sm = sMins[i].value;
+        const eh = eHours[i].value;
+        const em = eMins[i].value;
+        
+        if (sh && sm && eh && em) {
+          const sMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+          const eMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+          
+          if (isNaN(sMin) || isNaN(eMin) || eMin <= sMin) {
+             hasError = true;
+          } else {
+             intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
+          }
+        } else {
+          hasError = true; // 如果有任何一格是 '--' 空值，標示為錯誤
+        }
+      }
+      return { intervals, hasError };
+    }
+
+    // 將資料庫的字串 "14:30" 轉為分鐘數
     function parseTimeToMinutes(timeStr) {
       if(!timeStr || typeof timeStr !== 'string') return -1;
       const parts = timeStr.split(':');
@@ -548,29 +592,6 @@
       const m = parseInt(parts[1], 10);
       if (isNaN(h) || isNaN(m)) return -1;
       return h * 60 + m;
-    }
-
-    function getValidIntervalsFromUI() {
-      const startInputs = document.querySelectorAll('.start-time');
-      const endInputs = document.querySelectorAll('.end-time');
-      let intervals = [];
-      let hasError = false;
-
-      for (let i = 0; i < startInputs.length; i++) {
-        const startVal = startInputs[i].value;
-        const endVal = endInputs[i].value;
-        if (startVal && endVal) {
-          const sMin = parseTimeToMinutes(startVal);
-          const eMin = parseTimeToMinutes(endVal);
-          
-          if (sMin === -1 || eMin === -1 || eMin <= sMin) {
-             hasError = true;
-          } else {
-             intervals.push({ start: sMin, end: eMin, str: `${startVal}-${endVal}` });
-          }
-        }
-      }
-      return { intervals, hasError };
     }
 
     function processSelfIntervals(intervals) {
@@ -594,7 +615,6 @@
       return { totalMinutes, hasOverlap };
     }
 
-    // ★ 檢查行程重疊：區分「同一人重疊」與「不同人群組安置重疊」
     function checkAgentScheduleOverlap(targetDateStr, newIntervals, currentClientName) {
       if (!targetDateStr || newIntervals.length === 0) return null;
 
@@ -632,7 +652,7 @@
             const isSamePerson = (existClientLower === currentClientName);
             
             if (isSamePerson) {
-              return { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: true }; // 優先回傳嚴重錯誤
+              return { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: true }; 
             } else {
               if (!groupOverlapResult) {
                 groupOverlapResult = { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: false };
@@ -657,7 +677,7 @@
       const { intervals, hasError: hasInputError } = getValidIntervalsFromUI();
 
       if (hasInputError) {
-        showErrorState("⚠️ 警告：時間格式錯誤或結束早於開始，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
+        showErrorState("⚠️ 警告：時間格式不完整或結束早於開始，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
         return "錯誤";
       }
 
@@ -879,7 +899,6 @@
       }
     }
 
-    // ★ 總表防護機制 (Dirty Check)
     async function populateFormFromRecord(originalIndex) {
       const item = allSchedules[originalIndex];
       if (!item) return;
@@ -891,7 +910,6 @@
         return;
       }
 
-      // 如果是在新增模式，檢查是否有輸入資料，有則跳出確認警告
       if (!isEditMode) {
         const cName = document.getElementById('clientName').value.trim();
         const comp = document.getElementById('companyName').value.trim();
@@ -907,7 +925,7 @@
             confirmButtonText: '確定放棄並載入',
             cancelButtonText: '取消'
           });
-          if (!result.isConfirmed) return; // 使用者按取消，中止載入
+          if (!result.isConfirmed) return; 
         }
       }
 
@@ -964,7 +982,6 @@
           return;
         }
 
-        // ★ 群組安置的防呆二次確認
         if (currentOverlapState) {
           const confirmRes = await Swal.fire({
             title: '⚠️ 偵測到行程重疊',
@@ -977,7 +994,7 @@
             cancelButtonText: '返回修改時間'
           });
           if (!confirmRes.isConfirmed) {
-            return; // 使用者按取消，中止送出
+            return; 
           }
         }
 
