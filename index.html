@@ -133,11 +133,20 @@
               
               <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤或重疊，請修正！</div>
               <div id="agentOverlapWarning" class="error-text hidden"></div>
-              
-              <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
-              <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
             </div>
           </div>
+          
+          <!-- ★ 新增：休息時間區塊 -->
+          <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+          <div class="form-group">
+            <label>☕ 休息時間 (選填，將自動計算重疊並扣除時數)</label>
+            <div id="restRowsContainer"></div>
+            <button type="button" class="btn-add" style="background-color:#17a2b8;" onclick="addRestRow()">➕ 新增休息時段</button>
+            <div id="restWarning" class="error-text hidden">⚠️ 警告：休息時間設定有錯誤 (結束需晚於開始)，請修正或留空！</div>
+          </div>
+          
+          <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
+          <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
         </div>
 
         <div class="grid">
@@ -485,6 +494,8 @@
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
       addTimeRow("09:00", "12:00");
+      
+      initRestRows(); // ★ 初始化休息時間
     }
 
     function addTimeRow(startVal = "", endVal = "") {
@@ -541,6 +552,108 @@
       triggerCalculateDuration();
     }
 
+    // ★ 新增：休息時間專用的 UI 生成與邏輯
+    function initRestRows() {
+      const container = document.getElementById('restRowsContainer');
+      container.innerHTML = '';
+      addRestRow("", "");
+    }
+
+    function addRestRow(startVal = "", endVal = "") {
+      const container = document.getElementById('restRowsContainer');
+      if (!startVal && !endVal) {
+        const endHours = document.querySelectorAll('.rest-end-hour');
+        const endMins = document.querySelectorAll('.rest-end-minute');
+        if (endHours.length > 0) {
+          const h = endHours[endHours.length - 1].value;
+          const m = endMins[endMins.length - 1].value;
+          if (h && m) startVal = `${h}:${m}`;
+        }
+      }
+
+      let sh = "", sm = "", eh = "", em = "";
+      if (startVal) { const parts = startVal.split(':'); sh = parts[0]; sm = parts[1]; }
+      if (endVal) { const parts = endVal.split(':'); eh = parts[0]; em = parts[1]; }
+
+      const createSelect = (className, max, selectedVal) => {
+        let html = `<select class="${className} time-select" style="background-color:#f8f9fa;" onchange="triggerCalculateDuration()">`;
+        html += `<option value="" ${!selectedVal ? 'selected' : ''}>--</option>`;
+        for(let i = 0; i < max; i++){
+            let val = i.toString().padStart(2, '0');
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
+        }
+        html += `</select>`;
+        return html;
+      };
+
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'time-row rest-row';
+      rowDiv.innerHTML = `
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('rest-start-hour', 25, sh)} <span style="font-weight:bold; color:#555;">時</span> 
+            ${createSelect('rest-start-minute', 60, sm)} <span style="font-weight:bold; color:#555;">分</span>
+        </div>
+        <span style="margin: 0 8px; font-weight:bold; color:#777;">至</span>
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('rest-end-hour', 25, eh)} <span style="font-weight:bold; color:#555;">時</span> 
+            ${createSelect('rest-end-minute', 60, em)} <span style="font-weight:bold; color:#555;">分</span>
+        </div>
+        <button type="button" class="btn-remove" style="margin-left: 5px; background-color:#6c757d;" onclick="removeRestRow(this)">✕</button>
+      `;
+      container.appendChild(rowDiv);
+      triggerCalculateDuration();
+    }
+
+    function removeRestRow(btn) {
+      const container = document.getElementById('restRowsContainer');
+      if (container.children.length > 1) {
+        btn.parentElement.remove();
+        triggerCalculateDuration();
+      } else {
+        const selects = container.children[0].querySelectorAll('select');
+        selects.forEach(s => s.value = "");
+        triggerCalculateDuration();
+      }
+    }
+
+    function getValidRestIntervalsFromUI() {
+      const sHours = document.querySelectorAll('.rest-start-hour');
+      const sMins = document.querySelectorAll('.rest-start-minute');
+      const eHours = document.querySelectorAll('.rest-end-hour');
+      const eMins = document.querySelectorAll('.rest-end-minute');
+      
+      let intervals = [];
+      let hasError = false;
+
+      for (let i = 0; i < sHours.length; i++) {
+        const sh = sHours[i].value;
+        const sm = sMins[i].value;
+        const eh = eHours[i].value;
+        const em = eMins[i].value;
+        
+        if (!sh && !sm && !eh && !em) continue; // 全部空白表示不填寫，忽略
+
+        if (sh && sm && eh && em) {
+          const sMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+          const eMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+          
+          if (isNaN(sMin) || isNaN(eMin) || eMin <= sMin) {
+             hasError = true;
+          } else {
+             intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
+          }
+        } else {
+          hasError = true; // 只填一半屬錯誤格式
+        }
+      }
+      return { intervals, hasError };
+    }
+
+    function getFormattedRestSlots() {
+      const { intervals } = getValidRestIntervalsFromUI();
+      return intervals.map(inv => inv.str).join('、');
+    }
+
     function removeTimeRow(btn) {
       const container = document.getElementById('timeRowsContainer');
       if (container.children.length > 1) {
@@ -594,11 +707,12 @@
       return h * 60 + m;
     }
 
-    function processSelfIntervals(intervals) {
-      if (intervals.length === 0) return { totalMinutes: 0, hasOverlap: false };
+    // ★ 修改：智慧處理輔導與休息時間的交集扣除演算
+    function processDurations(coachIntervals, restIntervals) {
+      if (coachIntervals.length === 0) return { totalMinutes: 0, hasOverlap: false };
       
-      let sorted = [...intervals].sort((a, b) => a.start - b.start);
-      let totalMinutes = 0;
+      let sorted = [...coachIntervals].sort((a, b) => a.start - b.start);
+      let mergedCoaching = [];
       let hasOverlap = false;
 
       let current = { start: sorted[0].start, end: sorted[0].end };
@@ -607,11 +721,42 @@
           hasOverlap = true;
           current.end = Math.max(current.end, sorted[i].end);
         } else {
-          totalMinutes += (current.end - current.start);
+          mergedCoaching.push(current);
           current = { start: sorted[i].start, end: sorted[i].end };
         }
       }
-      totalMinutes += (current.end - current.start);
+      mergedCoaching.push(current);
+
+      let mergedRest = [];
+      if (restIntervals && restIntervals.length > 0) {
+        let rSorted = [...restIntervals].sort((a, b) => a.start - b.start);
+        let rCurr = { start: rSorted[0].start, end: rSorted[0].end };
+        for (let i = 1; i < rSorted.length; i++) {
+          if (rSorted[i].start <= rCurr.end) {
+            rCurr.end = Math.max(rCurr.end, rSorted[i].end);
+          } else {
+            mergedRest.push(rCurr);
+            rCurr = { start: rSorted[i].start, end: rSorted[i].end };
+          }
+        }
+        mergedRest.push(rCurr);
+      }
+
+      let totalMinutes = 0;
+      for (let c of mergedCoaching) {
+        let cTime = c.end - c.start;
+        let overlapTime = 0;
+        // 計算與休息時間重疊的部分
+        for (let r of mergedRest) {
+          let oStart = Math.max(c.start, r.start);
+          let oEnd = Math.min(c.end, r.end);
+          if (oStart < oEnd) {
+            overlapTime += (oEnd - oStart);
+          }
+        }
+        totalMinutes += (cTime - overlapTime);
+      }
+
       return { totalMinutes, hasOverlap };
     }
 
@@ -667,6 +812,7 @@
     function triggerCalculateDuration() {
       const btn = document.getElementById('submitBtn');
       const warningEl = document.getElementById('overlapWarning');
+      const restWarningEl = document.getElementById('restWarning');
       const agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
       const formDateStr = document.getElementById('coachingDate').value;
       const durationDisplay = document.getElementById('totalDurationText');
@@ -674,35 +820,34 @@
 
       currentOverlapState = null; 
 
-      const { intervals, hasError: hasInputError } = getValidIntervalsFromUI();
+      const { intervals: coachIntervals, hasError: hasCoachError } = getValidIntervalsFromUI();
+      const { intervals: restIntervals, hasError: hasRestError } = getValidRestIntervalsFromUI();
 
-      if (hasInputError) {
+      if (hasCoachError) {
         showErrorState("⚠️ 警告：時間格式不完整或結束早於開始，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
+        if(restWarningEl) restWarningEl.classList.add('hidden');
         return "錯誤";
       }
 
-      const { totalMinutes, hasOverlap: hasSelfOverlap } = processSelfIntervals(intervals);
+      if (hasRestError) {
+        if(restWarningEl) restWarningEl.classList.remove('hidden');
+        btn.disabled = true;
+        durationDisplay.innerText = `本次執行時間：格式錯誤`;
+        updateCumulativeDuration();
+        return "錯誤";
+      } else {
+        if(restWarningEl) restWarningEl.classList.add('hidden');
+      }
+
+      const { totalMinutes, hasOverlap: hasSelfOverlap } = processDurations(coachIntervals, restIntervals);
+      
       if (hasSelfOverlap) {
         showErrorState("⚠️ 警告：表單內的時段設定有重疊，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
         return "錯誤";
       }
 
-      if (formDateStr && intervals.length > 0) {
-        const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), intervals, currentClientName);
-        if (overlapResult) {
-          if (overlapResult.isSamePerson) {
-            const msg = `⚠️ 警告：您在此日期與【${escapeHtml(overlapResult.clientName)}】已有安排輔導 (${escapeHtml(overlapResult.timeStr)})，禁止重複排程！`;
-            agentOverlapWarningEl.className = 'error-text';
-            showErrorState(msg, agentOverlapWarningEl, durationDisplay, btn, warningEl);
-            return "錯誤";
-          } else {
-            currentOverlapState = overlapResult; 
-          }
-        }
-      }
-
-      if (currentOverlapState) {
-        agentOverlapWarningEl.innerHTML = `💡提示：您在此時段已有安排【${escapeHtml(currentOverlapState.clientName)}】。若本次為『群組安置』，可繼續送出通報。`;
+      if (formDateStr && coachIntervals.length > 0) {
+        const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), coachIntervals, currentClientName);
         agentOverlapWarningEl.className = 'group-warning-text';
         agentOverlapWarningEl.classList.remove('hidden');
       } else {
@@ -877,6 +1022,18 @@
         }
         if (container.children.length === 0) initTimeRows();
 
+        const restContainer = document.getElementById('restRowsContainer');
+        restContainer.innerHTML = '';
+        const restTimeStr = String(matched.restTime || "");
+        if (restTimeStr) {
+          const rSlots = restTimeStr.split('、');
+          rSlots.forEach(slot => {
+            const parts = slot.split('-');
+            if (parts.length === 2) addRestRow(parts[0], parts[1]);
+          });
+        }
+        if (restContainer.children.length === 0) addRestRow("", "");
+
         checkDateSequence(); 
         triggerCalculateDuration(); 
       }
@@ -959,6 +1116,18 @@
       
       if (container.children.length === 0) initTimeRows();
 
+      const restContainer = document.getElementById('restRowsContainer');
+      restContainer.innerHTML = '';
+      const restTimeStr = String(item.restTime || "");
+      if (!isCanceled && restTimeStr) {
+        const rSlots = restTimeStr.split('、');
+        rSlots.forEach(slot => {
+          const parts = slot.split('-');
+          if (parts.length === 2) addRestRow(parts[0], parts[1]);
+        });
+      }
+      if (restContainer.children.length === 0) addRestRow("", "");
+
       triggerCalculateDuration(); 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -974,6 +1143,7 @@
       const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
       let totalDuration = "0小時00分";
       let coachingTimeStr = "取消輔導";
+      let restTimeStr = "";
 
       if (submitType !== 'cancel') {
         totalDuration = triggerCalculateDuration();
@@ -999,6 +1169,7 @@
         }
 
         coachingTimeStr = getFormattedTimeSlots();
+        restTimeStr = getFormattedRestSlots(); // ★ 擷取休息時間
       }
 
       const btn = document.getElementById('submitBtn');
@@ -1013,6 +1184,7 @@
         onboardDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('onboardDate').value)),
         coachingDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('coachingDate').value)),
         coachingTime: sanitizeInput(cleanAndToHalfWidth(coachingTimeStr)),
+        restTime: sanitizeInput(cleanAndToHalfWidth(restTimeStr)),
         companyName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('companyName').value)),
         workAddress: sanitizeInput(cleanAndToHalfWidth(document.getElementById('workAddress').value)),
         contactPerson: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPerson').value)),
@@ -1112,6 +1284,7 @@
       tbody.innerHTML = data.map((item) => {
         const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
         const coachingTimeStr = String(item.coachingTime || ""); 
+        const restTimeStr = String(item.restTime || "");
         const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
         
         let adminCells = isAdmin ? `
@@ -1119,11 +1292,17 @@
           <td>${escapeHtml(item.agentName)}</td>
         ` : '';
 
+        // ★ 總表顯示：若有休息時間，則註記在時間下方
+        let restHtml = "";
+        if (restTimeStr && !isCanceled) {
+            restHtml = `<br><small style="color:#6c757d;">(休: ${escapeHtml(restTimeStr)})</small>`;
+        }
+
         return `
         <tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改重新送出">
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
           <td>${formatDate(item.onboardDate)}</td>
-          <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small></td>
+          <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
           <td onclick="event.stopPropagation();">
@@ -1175,6 +1354,7 @@
       if (!item) return;
 
       const coachingTimeStr = String(item.coachingTime || ""); 
+      const restTimeStr = String(item.restTime || ""); 
       if (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消')) {
         SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
         return;
@@ -1192,7 +1372,13 @@
       const currentDurFormatted = formatDuration(item.totalDuration);
       const cumDurFormatted = formatDuration(item.cumText);
 
-      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${coachingTimeStr}），目前累積支持性輔導時數${cumDurFormatted}。`;
+      // ★ 複製格式轉換：有休息時間就標記上去
+      let restPart = "";
+      if (restTimeStr) {
+          restPart = `，扣除休息時間：${restTimeStr}`;
+      }
+
+      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${coachingTimeStr}${restPart}），目前累積支持性輔導時數${cumDurFormatted}。`;
 
       const textArea = document.createElement("textarea");
       textArea.value = textToCopy;
