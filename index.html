@@ -67,7 +67,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta3)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta5)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -489,19 +489,17 @@
       return true;
     }
 
-    // ★ 核心改動：改為雙下拉選單 (小時 與 分鐘) 且將小時開放至 24 點
     function initTimeRows() {
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
       addTimeRow("09:00", "12:00");
       
-      initRestRows(); // ★ 初始化休息時間
+      initRestRows(); // ★ 補上這行，讓休息時間的初始空白列也能一起顯示出來！
     }
 
     function addTimeRow(startVal = "", endVal = "") {
       const container = document.getElementById('timeRowsContainer');
       if (!startVal && !endVal) {
-        // 若沒有預設值，去抓畫面上最後一列的結束時間當作這列的開始時間
         const endHours = document.querySelectorAll('.end-hour');
         const endMins = document.querySelectorAll('.end-minute');
         if (endHours.length > 0) {
@@ -521,7 +519,6 @@
         eh = parts[0]; em = parts[1];
       }
 
-      // ★ 動態產生選單的 Helper 函數 (max 設定為 25，即可產生 00~24 的選項)
       const createSelect = (className, max, selectedVal) => {
         let html = `<select class="${className} time-select" onchange="triggerCalculateDuration()" required>`;
         html += `<option value="" disabled ${!selectedVal ? 'selected' : ''}>--</option>`;
@@ -552,7 +549,6 @@
       triggerCalculateDuration();
     }
 
-    // ★ 新增：休息時間專用的 UI 生成與邏輯
     function initRestRows() {
       const container = document.getElementById('restRowsContainer');
       container.innerHTML = '';
@@ -631,7 +627,7 @@
         const eh = eHours[i].value;
         const em = eMins[i].value;
         
-        if (!sh && !sm && !eh && !em) continue; // 全部空白表示不填寫，忽略
+        if (!sh && !sm && !eh && !em) continue; 
 
         if (sh && sm && eh && em) {
           const sMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
@@ -643,7 +639,7 @@
              intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
           }
         } else {
-          hasError = true; // 只填一半屬錯誤格式
+          hasError = true; 
         }
       }
       return { intervals, hasError };
@@ -664,7 +660,6 @@
       }
     }
 
-    // 取得選單的值並驗證
     function getValidIntervalsFromUI() {
       const sHours = document.querySelectorAll('.start-hour');
       const sMins = document.querySelectorAll('.start-minute');
@@ -690,13 +685,12 @@
              intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
           }
         } else {
-          hasError = true; // 如果有任何一格是 '--' 空值，標示為錯誤
+          hasError = true; 
         }
       }
       return { intervals, hasError };
     }
 
-    // 將資料庫的字串 "14:30" 轉為分鐘數
     function parseTimeToMinutes(timeStr) {
       if(!timeStr || typeof timeStr !== 'string') return -1;
       const parts = timeStr.split(':');
@@ -707,7 +701,6 @@
       return h * 60 + m;
     }
 
-    // ★ 修改：智慧處理輔導與休息時間的交集扣除演算
     function processDurations(coachIntervals, restIntervals) {
       if (coachIntervals.length === 0) return { totalMinutes: 0, hasOverlap: false };
       
@@ -746,7 +739,6 @@
       for (let c of mergedCoaching) {
         let cTime = c.end - c.start;
         let overlapTime = 0;
-        // 計算與休息時間重疊的部分
         for (let r of mergedRest) {
           let oStart = Math.max(c.start, r.start);
           let oEnd = Math.min(c.end, r.end);
@@ -848,6 +840,20 @@
 
       if (formDateStr && coachIntervals.length > 0) {
         const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), coachIntervals, currentClientName);
+        if (overlapResult) {
+          if (overlapResult.isSamePerson) {
+            const msg = `⚠️ 警告：您在此日期與【${escapeHtml(overlapResult.clientName)}】已有安排輔導 (${escapeHtml(overlapResult.timeStr)})，禁止重複排程！`;
+            agentOverlapWarningEl.className = 'error-text';
+            showErrorState(msg, agentOverlapWarningEl, durationDisplay, btn, warningEl);
+            return "錯誤";
+          } else {
+            currentOverlapState = overlapResult; 
+          }
+        }
+      }
+
+      if (currentOverlapState) {
+        agentOverlapWarningEl.innerHTML = `💡提示：您在此時段已有安排【${escapeHtml(currentOverlapState.clientName)}】。若本次為『群組安置』，可繼續送出通報。`;
         agentOverlapWarningEl.className = 'group-warning-text';
         agentOverlapWarningEl.classList.remove('hidden');
       } else {
@@ -1169,7 +1175,7 @@
         }
 
         coachingTimeStr = getFormattedTimeSlots();
-        restTimeStr = getFormattedRestSlots(); // ★ 擷取休息時間
+        restTimeStr = getFormattedRestSlots(); 
       }
 
       const btn = document.getElementById('submitBtn');
@@ -1292,7 +1298,6 @@
           <td>${escapeHtml(item.agentName)}</td>
         ` : '';
 
-        // ★ 總表顯示：若有休息時間，則註記在時間下方
         let restHtml = "";
         if (restTimeStr && !isCanceled) {
             restHtml = `<br><small style="color:#6c757d;">(休: ${escapeHtml(restTimeStr)})</small>`;
@@ -1372,7 +1377,6 @@
       const currentDurFormatted = formatDuration(item.totalDuration);
       const cumDurFormatted = formatDuration(item.cumText);
 
-      // ★ 複製格式轉換：有休息時間就標記上去
       let restPart = "";
       if (restTimeStr) {
           restPart = `，扣除休息時間：${restTimeStr}`;
