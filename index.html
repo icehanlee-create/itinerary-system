@@ -43,15 +43,15 @@
     .time-select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; background-color: #fff; cursor: pointer; text-align: center; width: 65px; font-weight: bold; }
     
     table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; vertical-align: middle; }
     th { background-color: #f2f2f2; }
-    tr.clickable-row { cursor: pointer; }
-    tr.clickable-row:hover { background-color: #e8f4ff; }
+    tbody tr:hover { background-color: #f9f9f9; } /* 取代原先的 clickable-row hover 效果 */
     .search-box { margin-bottom: 15px; }
     .hint { font-size: 12px; color: #666; margin-top: 5px; }
     
     .badge-mode { padding: 4px 8px; font-size: 16px; font-weight: bold; color: #0056b3; background: transparent; border: 2px solid currentColor; border-radius: 4px; margin-left: 5px; cursor: default; }
     .badge-mode.edit { color: #dc3545; }
+    .badge-mode.edit-rest { color: #20c997; } /* ★ 新增：湖水綠樣式 */
     .badge-role { background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 5px; }
     .duration-display { font-weight: bold; color: #d9534f; margin-top: 5px; font-size: 14px; }
     .cumulative-display { font-weight: bold; color: #17a2b8; margin-top: 5px; font-size: 14px; }
@@ -60,13 +60,69 @@
     
     .swal2-title { font-size: 1.5rem !important; color: #0056b3 !important; }
     .swal2-html-container { font-size: 1.1rem !important; }
+
+
+/* 登入頁下方的常用連結區域樣式 */
+    .quick-links-container {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px dashed #ccc;
+    }
+    
+    /* 基礎膠囊形狀 (只保留形狀，不綁定顏色) */
+    .capsule-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      text-decoration: none;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: bold;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .capsule-link:hover {
+      transform: translateY(-2px); /* 滑鼠移過去微微浮起 */
+    }
+
+    /* 🎨 第一個按鈕：知性藍 (適合操作手冊) */
+    .link-blue {
+      background-color: #eef6ff;
+      color: #0056b3;
+      border-color: #b6d4fe;
+    }
+    .link-blue:hover { background-color: #d6e8ff; }
+
+    /* 🎨 第二個按鈕：友善綠 (適合常見問題) */
+    .link-green {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border-color: #a5d6a7;
+    }
+    .link-green:hover { background-color: #c8e6c9; }
+
+    /* 🎨 第三個按鈕：活力橘 (適合通報規範/注意事項) */
+    .link-orange {
+      background-color: #fff3e0;
+      color: #e65100;
+      border-color: #ffcc80;
+    }
+    .link-orange:hover { background-color: #ffe0b2; }
+
+
+
+
   </style>
 </head>
 <body>
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta6)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta7)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -77,6 +133,16 @@
         <input type="password" id="loginPassword" placeholder="請輸入密碼">
       </div>
       <button onclick="login()" id="loginBtn" style="width: 100%; margin-top: 10px;">登入</button>
+    
+    
+    <div class="quick-links-container">
+        <a href="https://pwdsvr.wda.gov.tw/" target="_blank" class="capsule-link link-blue">勞委系統(紀錄)</a>
+        <a href="https://www.fd-enableap.taipei/enableap/" target="_blank" class="capsule-link link-green">基金系統(月報)</a>
+        <a href="https://vrs2.wda.gov.tw/eVRS" target="_blank" class="capsule-link link-orange">專業人員系統(繼續教育)</a>
+      </div>
+    
+    
+    
     </div>
 
     <div id="mainSection" class="hidden">
@@ -196,7 +262,7 @@
       <hr style="margin: 30px 0; border: 0; border-top: 2px dashed #ccc;">
 
       <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge-role"></span></h3>
-      <div class="hint" style="margin-bottom: 8px;">💡 提示：點擊下方任意紀錄表格項目，即可將資料帶回上方表單重新修改與寄信！</div>
+      <div class="hint" style="margin-bottom: 8px;">💡 提示：請點擊左側「操作」欄位內的按鈕進行對應功能。</div>
       <div class="search-box">
         <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)">
       </div>
@@ -206,7 +272,7 @@
           <thead id="dataTableHead">
           </thead>
           <tbody id="dataTableBody">
-            <tr><td colspan="10" style="text-align: center;">載入中...</td></tr>
+            <tr><td colspan="11" style="text-align: center;">載入中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -223,7 +289,7 @@
     let isEditMode = false;
     let currentEditRecordId = null; 
     let currentOverlapState = null; 
-    let currentFormMode = 'add'; // ★ 追蹤詳細表單模式 ('add', 'edit', 'edit-rest')
+    let currentFormMode = 'add'; // 追蹤詳細表單模式 ('add', 'edit', 'edit-rest')
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -408,7 +474,7 @@
 
       if (mode === 'edit') {
         badge.innerText = '【修改重發模式】';
-        badge.classList.add('edit');
+        badge.className = 'badge-mode edit';
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.remove('hidden');
         if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
@@ -426,7 +492,7 @@
       } else if (mode === 'edit-rest') {
         // ★ 補登休息模式：大部分欄位鎖定，不寄出信件
         badge.innerText = '【補登休息模式】';
-        badge.classList.add('edit');
+        badge.className = 'badge-mode edit-rest'; // 使用湖水綠樣式
         switchBtn.classList.remove('hidden');
         cancelBtn.classList.add('hidden');
         if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
@@ -443,7 +509,7 @@
 
       } else {
         badge.innerText = '【新增模式】';
-        badge.classList.remove('edit');
+        badge.className = 'badge-mode';
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
         actionLogContainer.classList.add('hidden'); 
@@ -1093,7 +1159,6 @@
       }
     }
 
-    // ★ 開放參數 isRestOnly，判定是否進入純補登休息模式
     async function populateFormFromRecord(originalIndex, isRestOnly = false) {
       const item = allSchedules[originalIndex];
       if (!item) return;
@@ -1304,14 +1369,15 @@
       const isAdmin = currentUser && currentUser.role === 'admin';
       const colCount = isAdmin ? 11 : 9;
 
+      // ★ 移到最左側的「操作」欄位
       thead.innerHTML = `
         <tr>
+          <th>操作</th>
           <th>服務使用者</th>
           <th>到職日</th>
           <th>輔導日期/時段</th>
           <th>本次時數</th>
           <th>累計時數</th>
-          <th>操作</th>
           <th>事業單位/地址</th>
           <th>聯絡人/電話</th>
           <th>備註</th>
@@ -1340,20 +1406,21 @@
             restHtml = `<br><small style="color:#6c757d;">(休: ${escapeHtml(restTimeStr)})</small>`;
         }
 
-        // ★ 操作欄位：新增「補登休息」按鈕
+        // ★ 取消 clickable-row，按鈕集中在第一欄
         return `
-        <tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改重新送出">
+        <tr>
+          <td style="vertical-align: middle;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <button type="button" class="btn-warning" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, false)" title="修改此筆紀錄並重新發送通報">📝 修改重送</button>
+              <button type="button" class="btn-info" style="font-size:12px; padding:5px 8px; white-space: nowrap; background-color:#20c997; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註">☕ 補登休息</button>
+              <button type="button" class="btn-secondary" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製時數</button>
+            </div>
+          </td>
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
           <td>${formatDate(item.onboardDate)}</td>
           <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
-          <td onclick="event.stopPropagation();">
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製</button>
-              ${!isCanceled ? `<button type="button" class="btn-info" style="font-size:12px; padding:4px 8px; white-space: nowrap; background-color:#20c997; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註">📝 補登休息</button>` : ''}
-            </div>
-          </td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
