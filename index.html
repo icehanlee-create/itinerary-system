@@ -17,7 +17,7 @@
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     textarea { resize: vertical; height: 60px; }
-    input[readonly] { background-color: #e9ecef; cursor: not-allowed; color: #666; border-color: #ddd; }
+    input[readonly], select[disabled] { background-color: #e9ecef; cursor: not-allowed; color: #666; border-color: #ddd; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
     @media(min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
     
@@ -40,7 +40,6 @@
     .time-block-box { background: #fff8e1; padding: 15px; border-radius: 6px; border: 1px solid #ffe082; margin-bottom: 15px; }
     .time-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
     
-    /* ★ 新增：時間下拉選單的美化樣式 */
     .time-select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; background-color: #fff; cursor: pointer; text-align: center; width: 65px; font-weight: bold; }
     
     table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
@@ -67,7 +66,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta5)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(1.0.0-beta6)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -136,12 +135,11 @@
             </div>
           </div>
           
-          <!-- ★ 新增：休息時間區塊 -->
           <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
           <div class="form-group">
             <label>☕ 休息時間 (選填，將自動計算重疊並扣除時數)</label>
             <div id="restRowsContainer"></div>
-            <button type="button" class="btn-add" style="background-color:#17a2b8;" onclick="addRestRow()">➕ 新增休息時段</button>
+            <button type="button" id="addRestBtn" class="btn-add" style="background-color:#17a2b8;" onclick="addRestRow()">➕ 新增休息時段</button>
             <div id="restWarning" class="error-text hidden">⚠️ 警告：休息時間設定有錯誤 (結束需晚於開始)，請修正或留空！</div>
           </div>
           
@@ -225,6 +223,7 @@
     let isEditMode = false;
     let currentEditRecordId = null; 
     let currentOverlapState = null; 
+    let currentFormMode = 'add'; // ★ 追蹤詳細表單模式 ('add', 'edit', 'edit-rest')
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -398,11 +397,16 @@
       const dateLockHint = document.getElementById('dateLockHint');
       const presetCard = document.getElementById('presetCard');
       const actionLogContainer = document.getElementById('actionLogContainer');
-      const fieldsToLock = ['clientName', 'onboardDate', 'companyName'];
+      const addTimeBtn = document.getElementById('addTimeBtn');
+      const submitBtn = document.getElementById('submitBtn');
       
-      isEditMode = (mode === 'edit');
+      const coreFieldsToLock = ['clientName', 'onboardDate', 'companyName'];
+      const extraFieldsToLock = ['workAddress', 'contactPerson', 'contactPhone'];
+      
+      currentFormMode = mode;
+      isEditMode = (mode === 'edit' || mode === 'edit-rest');
 
-      if (isEditMode) {
+      if (mode === 'edit') {
         badge.innerText = '【修改重發模式】';
         badge.classList.add('edit');
         switchBtn.classList.remove('hidden');
@@ -413,7 +417,30 @@
         presetCard.classList.add('hidden');
         coachingDateInput.readOnly = true;
         dateLockHint.classList.remove('hidden');
-        fieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+        
+        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        addTimeBtn.classList.remove('hidden');
+        submitBtn.innerText = '儲存並送出通報通知';
+
+      } else if (mode === 'edit-rest') {
+        // ★ 補登休息模式：大部分欄位鎖定，不寄出信件
+        badge.innerText = '【補登休息模式】';
+        badge.classList.add('edit');
+        switchBtn.classList.remove('hidden');
+        cancelBtn.classList.add('hidden');
+        if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
+        else actionLogContainer.classList.add('hidden');
+        document.body.style.backgroundColor = '#e8f4ff'; 
+        presetCard.classList.add('hidden');
+        coachingDateInput.readOnly = true;
+        dateLockHint.classList.remove('hidden');
+        
+        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+        addTimeBtn.classList.add('hidden');
+        submitBtn.innerText = '儲存補登 (不寄發信件)';
+
       } else {
         badge.innerText = '【新增模式】';
         badge.classList.remove('edit');
@@ -426,7 +453,11 @@
         dateLockHint.classList.add('hidden');
         currentEditRecordId = null; 
         document.getElementById('actionLog').value = ''; 
-        fieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        
+        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        addTimeBtn.classList.remove('hidden');
+        submitBtn.innerText = '儲存並送出通報通知';
       }
     }
 
@@ -493,8 +524,7 @@
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
       addTimeRow("09:00", "12:00");
-      
-      initRestRows(); // ★ 補上這行，讓休息時間的初始空白列也能一起顯示出來！
+      initRestRows(); 
     }
 
     function addTimeRow(startVal = "", endVal = "") {
@@ -519,8 +549,9 @@
         eh = parts[0]; em = parts[1];
       }
 
+      const isRestOnly = (currentFormMode === 'edit-rest');
       const createSelect = (className, max, selectedVal) => {
-        let html = `<select class="${className} time-select" onchange="triggerCalculateDuration()" required>`;
+        let html = `<select class="${className} time-select" onchange="triggerCalculateDuration()" required ${isRestOnly ? 'disabled' : ''}>`;
         html += `<option value="" disabled ${!selectedVal ? 'selected' : ''}>--</option>`;
         for(let i = 0; i < max; i++){
             let val = i.toString().padStart(2, '0');
@@ -543,7 +574,7 @@
             ${createSelect('end-hour', 25, eh)} <span style="font-weight:bold; color:#555;">時</span> 
             ${createSelect('end-minute', 60, em)} <span style="font-weight:bold; color:#555;">分</span>
         </div>
-        <button type="button" class="btn-remove" style="margin-left: 5px;" onclick="removeTimeRow(this)">✕</button>
+        <button type="button" class="btn-remove" style="margin-left: 5px; ${isRestOnly ? 'display:none;' : ''}" onclick="removeTimeRow(this)">✕</button>
       `;
       container.appendChild(rowDiv);
       triggerCalculateDuration();
@@ -1062,18 +1093,19 @@
       }
     }
 
-    async function populateFormFromRecord(originalIndex) {
+    // ★ 開放參數 isRestOnly，判定是否進入純補登休息模式
+    async function populateFormFromRecord(originalIndex, isRestOnly = false) {
       const item = allSchedules[originalIndex];
       if (!item) return;
 
       const coachingTimeStr = String(item.coachingTime || ""); 
       const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
       if (isCanceled) {
-        SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
+        SysMsg.alert('此筆紀錄已註銷，無法進行修改與補登！');
         return;
       }
 
-      if (!isEditMode) {
+      if (currentFormMode === 'add') {
         const cName = document.getElementById('clientName').value.trim();
         const comp = document.getElementById('companyName').value.trim();
         const cDate = document.getElementById('coachingDate').value;
@@ -1093,7 +1125,7 @@
       }
 
       currentEditRecordId = item.id; 
-      setFormMode('edit');
+      setFormMode(isRestOnly ? 'edit-rest' : 'edit');
 
       document.getElementById('clientName').value = item.clientName;
       document.getElementById('onboardDate').value = formatDate(item.onboardDate);
@@ -1146,7 +1178,12 @@
         return;
       }
       
-      const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
+      let defaultSubmitType = 'new';
+      if (currentFormMode === 'edit') defaultSubmitType = 'edit';
+      if (currentFormMode === 'edit-rest') defaultSubmitType = 'edit-rest';
+
+      const submitType = forcedSubmitType || defaultSubmitType;
+      
       let totalDuration = "0小時00分";
       let coachingTimeStr = "取消輔導";
       let restTimeStr = "";
@@ -1158,7 +1195,7 @@
           return;
         }
 
-        if (currentOverlapState) {
+        if (currentOverlapState && submitType !== 'edit-rest') {
           const confirmRes = await Swal.fire({
             title: '⚠️ 偵測到行程重疊',
             html: `系統發現您在此時段已有安排其他服務對象【<b>${escapeHtml(currentOverlapState.clientName)}</b>】。<br><br>請問這是一次「群組安置」（多人同梯次）嗎？`,
@@ -1216,13 +1253,13 @@
           
           loadSchedules(); 
         } else {
-          SysMsg.error('通報失敗', res.message);
+          SysMsg.error('處理失敗', res.message);
         }
       } catch (err) {
         if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = '儲存並送出通報通知';
+        btn.innerText = (currentFormMode === 'edit-rest') ? '儲存補登 (不寄發信件)' : '儲存並送出通報通知';
       }
     }
 
@@ -1303,6 +1340,7 @@
             restHtml = `<br><small style="color:#6c757d;">(休: ${escapeHtml(restTimeStr)})</small>`;
         }
 
+        // ★ 操作欄位：新增「補登休息」按鈕
         return `
         <tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改重新送出">
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
@@ -1311,7 +1349,10 @@
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
           <td onclick="event.stopPropagation();">
-            <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製</button>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製</button>
+              ${!isCanceled ? `<button type="button" class="btn-info" style="font-size:12px; padding:4px 8px; white-space: nowrap; background-color:#20c997; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註">📝 補登休息</button>` : ''}
+            </div>
           </td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
