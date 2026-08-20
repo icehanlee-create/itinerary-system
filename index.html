@@ -15,13 +15,14 @@
     .container { max-width: 980px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2, h3 { color: #0056b3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
     .hidden { display: none !important; }
-    .form-group { margin-bottom: 12px; }
+    .form-group { margin-bottom: 15px; } /* ★ 加大間距讓單欄更易讀 */
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     textarea { resize: vertical; height: 60px; }
     input[readonly], select[disabled] { background-color: #e9ecef; cursor: not-allowed; color: #666; border-color: #ddd; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-    @media(min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
+    
+    /* ★ 移除左右雙欄設計，全部改為單欄直落 */
+    .grid { display: flex; flex-direction: column; gap: 0; } 
     
     button { background-color: #0056b3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
     button:hover { background-color: #003d80; }
@@ -73,7 +74,6 @@
     .link-orange { background-color: #fff3e0; color: #e65100; border-color: #ffcc80; }
     .link-orange:hover { background-color: #ffe0b2; }
 
-    /* ★ 新增：近期行程卡片的動畫與 Hover 效果 */
     .upcoming-card { border: 1px solid #eee; border-left: 4px solid #0056b3; border-radius: 4px; padding: 10px; margin-bottom: 8px; background: #fafafa; cursor: pointer; transition: all 0.2s ease; }
     .upcoming-card:hover { background: #e8f4ff; transform: translateX(3px); border-color: #b6d4fe; }
   </style>
@@ -82,7 +82,7 @@
 
   <div class="container">
     <div id="loginSection">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v.1.0.1)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v1.0.2)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -126,19 +126,38 @@
         <label>⚡ 快速選擇過往訪視對象 (由新到舊)</label>
         <select id="historySelect" onchange="applyHistoryPreset()">
           <option value="">-- 請選擇歷史服務使用者與事業單位 --</option>
-        </select>
-        <div class="hint">點選後可自動帶入使用者、事業單位與前次輔導時段設定。</div>
+          </select>
+        <div class="hint">點選後可自動帶入使用者、事業單位等資訊。</div>
       </div>
 
       <form id="scheduleForm" onsubmit="submitSchedule(event)">
         <div class="grid">
           <div class="form-group">
-            <label>服務使用者姓名</label>
+            <label>
+              服務使用者姓名 
+              <button type="button" id="unlockCoreBtn" class="btn-warning hidden" onclick="unlockCoreFields()" style="margin-left: 10px; font-size: 12px; padding: 3px 8px;">🔓 解鎖編輯基本資料</button>
+            </label>
             <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration(); triggerCalculateDuration();">
           </div>
           <div class="form-group">
             <label>到職日期</label>
             <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
+          </div>
+          <div class="form-group">
+            <label>事業單位名稱</label>
+            <input type="text" id="companyName" required oninput="onCompanyInput()" placeholder="例如：小杉文化股份有限公司">
+          </div>
+          <div class="form-group">
+            <label>工作地地址</label>
+            <input type="text" id="workAddress" required placeholder="例如：台北市信義區市府路1號">
+          </div>
+          <div class="form-group">
+            <label>工作地聯絡人</label>
+            <input type="text" id="contactPerson" required>
+          </div>
+          <div class="form-group">
+            <label>聯絡人電話</label>
+            <input type="tel" id="contactPhone" required>
           </div>
         </div>
 
@@ -171,28 +190,6 @@
           <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
         </div>
 
-        <div class="grid">
-          <div class="form-group">
-            <label>事業單位名稱</label>
-            <input type="text" id="companyName" required oninput="onCompanyInput()" placeholder="例如：小杉文化股份有限公司">
-          </div>
-          <div class="form-group">
-            <label>工作地地址</label>
-            <input type="text" id="workAddress" required placeholder="例如：台北市信義區市府路1號">
-          </div>
-        </div>
-
-        <div class="grid">
-          <div class="form-group">
-            <label>工作地聯絡人</label>
-            <input type="text" id="contactPerson" required>
-          </div>
-          <div class="form-group">
-            <label>聯絡人電話</label>
-            <input type="tel" id="contactPhone" required>
-          </div>
-        </div>
-
         <div class="form-group">
           <label>備註 (可留空)</label>
           <textarea id="remarks" placeholder="如有其他細節請在此說明..."></textarea>
@@ -203,13 +200,13 @@
           <textarea id="actionLog" readonly style="background-color: #e9ecef; font-size: 13px; height: 80px;" placeholder="目前尚無修改紀錄"></textarea>
         </div>
 
-        <div class="grid">
+        <div class="grid hidden" id="agentFieldsContainer">
           <div class="form-group">
-            <label>就服員姓名</label>
+            <label>就服員姓名 (主管代填檢視用)</label>
             <input type="text" id="agentName" readonly>
           </div>
           <div class="form-group">
-            <label>就服員電話</label>
+            <label>就服員電話 (主管代填檢視用)</label>
             <input type="tel" id="agentPhone" readonly>
           </div>
         </div>
@@ -248,6 +245,9 @@
     let currentEditRecordId = null; 
     let currentOverlapState = null; 
     let currentFormMode = 'add'; 
+
+    // ★ 定義基本資料的欄位 ID 清單，用於防呆鎖定
+    const CORE_FIELDS = ['clientName', 'onboardDate', 'companyName', 'workAddress', 'contactPerson', 'contactPhone'];
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -301,6 +301,13 @@
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
 
+          // ★ 判斷是否顯示就服員欄位區塊 (僅主管顯示)
+          if (currentUser.role === 'admin') {
+             document.getElementById('agentFieldsContainer').classList.remove('hidden');
+          } else {
+             document.getElementById('agentFieldsContainer').classList.add('hidden');
+          }
+
           document.getElementById('loginSection').classList.add('hidden');
           document.getElementById('mainSection').classList.remove('hidden');
 
@@ -343,10 +350,11 @@
       document.getElementById('mainSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
-      sessionStorage.removeItem('hasShownUpcoming'); // 登出時清除彈窗記憶
+      sessionStorage.removeItem('hasShownUpcoming'); 
     }
 
     async function openAccountSettings() {
+      // (保持原有的帳號設定 Swal 功能)
       const { value: formValues } = await Swal.fire({
         title: '⚙️ 帳號設定',
         html:
@@ -375,9 +383,7 @@
           const oldPwd = document.getElementById('swal-input-old').value;
           const newPwd = document.getElementById('swal-input-new').value;
           const confirmPwd = document.getElementById('swal-input-confirm').value;
-
           if (!newPhone) { Swal.showValidationMessage('聯絡電話不能為空！'); return false; }
-
           if (oldPwd || newPwd || confirmPwd) {
             if (!oldPwd || !newPwd || !confirmPwd) { Swal.showValidationMessage('請完整填寫密碼欄位！'); return false; }
             if (newPwd !== confirmPwd) { Swal.showValidationMessage('新密碼與確認密碼不一致！'); return false; }
@@ -397,7 +403,6 @@
             oldPassword: formValues.oldPwd,
             newPassword: formValues.newPwd
           });
-          
           if (res.status === 'success') {
             currentUser.phone = formValues.newPhone;
             currentUser.email = formValues.newEmail;
@@ -424,9 +429,7 @@
       const actionLogContainer = document.getElementById('actionLogContainer');
       const addTimeBtn = document.getElementById('addTimeBtn');
       const submitBtn = document.getElementById('submitBtn');
-      
-      const coreFieldsToLock = ['clientName', 'onboardDate', 'companyName'];
-      const extraFieldsToLock = ['workAddress', 'contactPerson', 'contactPhone'];
+      const unlockBtn = document.getElementById('unlockCoreBtn');
       
       currentFormMode = mode;
       isEditMode = (mode === 'edit' || mode === 'edit-rest');
@@ -442,9 +445,18 @@
         presetCard.classList.add('hidden');
         coachingDateInput.readOnly = true;
         dateLockHint.classList.remove('hidden');
+        unlockBtn.classList.add('hidden');
         
-        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
-        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        CORE_FIELDS.forEach(id => { 
+            // 在修改模式下，前三個強制鎖定，後三個開放
+            if(id === 'clientName' || id === 'onboardDate' || id === 'companyName') {
+               document.getElementById(id).readOnly = true; 
+               document.getElementById(id).style.backgroundColor = '#e9ecef';
+            } else {
+               document.getElementById(id).readOnly = false; 
+               document.getElementById(id).style.backgroundColor = '';
+            }
+        });
         addTimeBtn.classList.remove('hidden');
         submitBtn.innerText = '儲存並送出通報通知';
 
@@ -459,9 +471,12 @@
         presetCard.classList.add('hidden');
         coachingDateInput.readOnly = true;
         dateLockHint.classList.remove('hidden');
+        unlockBtn.classList.add('hidden');
         
-        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
-        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+        CORE_FIELDS.forEach(id => { 
+           document.getElementById(id).readOnly = true; 
+           document.getElementById(id).style.backgroundColor = '#e9ecef';
+        });
         addTimeBtn.classList.add('hidden');
         submitBtn.innerText = '儲存補登 (不寄發信件)';
 
@@ -475,11 +490,14 @@
         presetCard.classList.remove('hidden');
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
+        unlockBtn.classList.add('hidden');
         currentEditRecordId = null; 
         document.getElementById('actionLog').value = ''; 
         
-        coreFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
-        extraFieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        CORE_FIELDS.forEach(id => { 
+           document.getElementById(id).readOnly = false; 
+           document.getElementById(id).style.backgroundColor = '';
+        });
         addTimeBtn.classList.remove('hidden');
         submitBtn.innerText = '儲存並送出通報通知';
       }
@@ -507,6 +525,18 @@
           updateCumulativeDuration(); 
         }
       });
+    }
+
+    // ★ 解鎖基本資料欄位
+    function unlockCoreFields() {
+       if (currentFormMode === 'add') {
+           CORE_FIELDS.forEach(id => {
+               document.getElementById(id).readOnly = false;
+               document.getElementById(id).style.backgroundColor = '';
+           });
+           document.getElementById('unlockCoreBtn').classList.add('hidden');
+           SysMsg.success('解鎖成功', '基本資料已開放編輯。請確認修改無誤。');
+       }
     }
 
     function cancelCoaching() {
@@ -1026,9 +1056,11 @@
       return totalMins;
     }
 
+    // ★ 修改：下拉選單的最上方增加「清空」的選項
     function renderHistoryDropdown() {
       const select = document.getElementById('historySelect');
       select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
+      select.innerHTML += '<option value="NEW" style="font-weight:bold; color:#0056b3;">➕ 新增全新的訪視對象 (清空表單)</option>';
 
       const uniqueMap = new Map();
       const isAdmin = currentUser && currentUser.role === 'admin';
@@ -1053,6 +1085,21 @@
     function applyHistoryPreset() {
       const selectedKey = document.getElementById('historySelect').value;
       if (!selectedKey) return;
+
+      // ★ 判斷是否選擇「新增全新」
+      if (selectedKey === 'NEW') {
+          CORE_FIELDS.forEach(id => { document.getElementById(id).value = ''; });
+          document.getElementById('coachingDate').value = '';
+          document.getElementById('remarks').value = '';
+          initTimeRows();
+          checkDateSequence();
+          triggerCalculateDuration();
+          
+          if (currentFormMode === 'add') {
+             unlockCoreFields();
+          }
+          return;
+      }
 
       const matched = allSchedules.find(item => 
         !String(item.coachingTime || "").includes('取消') && 
@@ -1094,6 +1141,15 @@
           });
         }
         if (restContainer.children.length === 0) addRestRow("", "");
+
+        // ★ 帶入成功後，立刻將基本資料鎖死，並顯示解鎖按鈕
+        if (currentFormMode === 'add') {
+            CORE_FIELDS.forEach(id => {
+               document.getElementById(id).readOnly = true;
+               document.getElementById(id).style.backgroundColor = '#e9ecef';
+            });
+            document.getElementById('unlockCoreBtn').classList.remove('hidden');
+        }
 
         checkDateSequence(); 
         triggerCalculateDuration(); 
@@ -1314,7 +1370,6 @@
           renderHistoryDropdown();
           filterData(); 
 
-          // ★ 新增：載入完畢後判斷是否要彈出「近期行程」視窗
           if (!sessionStorage.getItem('hasShownUpcoming')) {
              showUpcomingSchedules(true);
              sessionStorage.setItem('hasShownUpcoming', 'true');
@@ -1328,7 +1383,6 @@
       }
     }
 
-    // ★ 新增：「近期行程」主要處理與渲染函數
     function showUpcomingSchedules(autoShow = false) {
       if (!allSchedules || allSchedules.length === 0) return;
 
@@ -1338,14 +1392,12 @@
       renderUpcomingPopup(prefDays, autoShow);
     }
 
-    // ★ 新增：「近期行程」介面渲染與過濾邏輯
     function renderUpcomingPopup(days, autoShow) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + days);
 
-      // 過濾：大於等於今天、小於等於目標天數、且未取消
       const upcoming = allSchedules.filter(item => {
          const cTimeStr = String(item.coachingTime || "");
          if (cTimeStr === '取消輔導' || cTimeStr.includes('取消')) return false;
@@ -1355,7 +1407,6 @@
          return d >= today && d <= targetDate;
       });
 
-      // 按照日期由近到遠排序
       upcoming.sort((a,b) => new Date(a.coachingDate) - new Date(b.coachingDate));
 
       let html = `
@@ -1401,7 +1452,6 @@
           html += `<div style="font-size:11px; color:#888; text-align:left; margin-top:10px;">💡 提示：點擊行程卡片可直接帶入表單修改</div>`;
       }
 
-      // 如果是自動跳出且沒有行程，就不打擾使用者
       if (autoShow && upcoming.length === 0) return;
 
       Swal.fire({
@@ -1414,7 +1464,6 @@
       });
     }
 
-    // ★ 新增：全域函數供 SweetAlert 下拉選單呼叫
     window.updateUpcomingDays = function(val) {
        localStorage.setItem('upcomingDaysPref', val);
        showUpcomingSchedules(false); 
