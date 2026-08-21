@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>支持性輔導通報系統</title>
   
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍀</text></svg>">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 
@@ -13,38 +14,20 @@
        日系高級灰藍風 Design System
     ========================================= */
     :root {
-        --primary: #3F5F6F;
-        --primary-hover: #304B58;
-        --primary-light: #E8EFF2;
-        --success: #5F8F72;
-        --success-hover: #4B765D;
-        --success-light: #EAF2EC;
-        --info: #3F7F8C;
-        --info-hover: #316875;
-        --info-light: #E7F1F3;
-        --warning: #C99032;
-        --warning-hover: #A87525;
-        --warning-light: #FBF3E3;
-        --danger: #B95C5C;
-        --danger-hover: #9E4747;
-        --danger-light: #F8EAEA;
-        --secondary: #6F7B84;
-        --secondary-hover: #59636A;
-        --secondary-light: #EEF1F2;
-        --bg: #F6F7F5;
-        --card: #FFFFFF;
-        --input-bg: #FFFFFF;
-        --preset-bg: #EEF4F5;
-        --preset-border: #CCDDE1;
-        --time-bg: #FBF7EF;
-        --time-border: #E8DCC5;
-        --text: #2F3437;
-        --text-secondary: #536068;
-        --text-muted: #667178;
-        --border: #DDE2E5;
-        --border-light: #E9EDEE;
-        --shadow-sm: 0 2px 8px rgba(47, 52, 55, 0.06);
-        --shadow-md: 0 5px 18px rgba(47, 52, 55, 0.08);
+        --primary: #3F5F6F; --primary-hover: #304B58; --primary-light: #E8EFF2;
+        --success: #5F8F72; --success-hover: #4B765D; --success-light: #EAF2EC;
+        --info: #3F7F8C; --info-hover: #316875; --info-light: #E7F1F3;
+        --warning: #C99032; --warning-hover: #A87525; --warning-light: #FBF3E3;
+        --danger: #B95C5C; --danger-hover: #9E4747; --danger-light: #F8EAEA;
+        --secondary: #6F7B84; --secondary-hover: #59636A; --secondary-light: #EEF1F2;
+        
+        --bg: #F6F7F5; --card: #FFFFFF; --input-bg: #FFFFFF;
+        --preset-bg: #EEF4F5; --preset-border: #CCDDE1;
+        --time-bg: #FBF7EF; --time-border: #E8DCC5;
+        
+        --text: #2F3437; --text-secondary: #536068; --text-muted: #667178;
+        --border: #DDE2E5; --border-light: #E9EDEE;
+        --shadow-sm: 0 2px 8px rgba(47, 52, 55, 0.06); --shadow-md: 0 5px 18px rgba(47, 52, 55, 0.08);
     }
 
     body { font-family: "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg); color: var(--text); line-height: 1.5; transition: background-color 0.3s ease; }
@@ -59,7 +42,7 @@
     input[readonly], select[disabled] { background-color: #F0F2F1; cursor: not-allowed; color: var(--text-muted); border-color: #E0E4E2; }
     textarea { resize: vertical; height: 60px; }
     .grid { display: flex; flex-direction: column; gap: 0; }
-    
+
     button { background-color: var(--primary); color: #FFFFFF; border: none; padding: 10px 15px; border-radius: 7px; cursor: pointer; font-size: 16px; font-family: inherit; font-weight: bold; transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; }
     button:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(63, 95, 111, 0.18); }
     button:active { transform: translateY(0); }
@@ -74,32 +57,36 @@
     .btn-add:hover { background-color: var(--success-hover); }
     .btn-remove { background-color: var(--danger); color: #FFFFFF; font-size: 14px; padding: 6px 12px; width: auto; }
     .btn-remove:hover { background-color: var(--danger-hover); }
-    
+
     .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; }
     .preset-card { background-color: var(--preset-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--preset-border); margin-bottom: 20px; }
     .time-block-box { background: var(--time-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--time-border); margin-bottom: 15px; }
     .time-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
     .time-select { padding: 7px; border-radius: 7px; border: 1px solid var(--border); font-size: 15px; background-color: #FFFFFF; color: var(--text); cursor: pointer; text-align: center; width: 65px; font-weight: bold; }
-    
+
     table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; background-color: var(--card); }
     th, td { border: 1px solid var(--border-light); padding: 10px; text-align: left; font-size: 14px; vertical-align: middle; }
     th { background-color: #F0F3F4; color: var(--text-secondary); font-weight: bold; }
     tbody tr { transition: background-color 0.2s ease; }
     tbody tr:nth-child(even) { background-color: #FCFDFC; }
     tbody tr:hover { background-color: #EEF4F5; }
-    
+
     .search-box { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
     .hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
     .badge-mode { padding: 4px 8px; font-size: 16px; font-weight: bold; color: var(--primary); background: var(--primary-light); border: 1px solid #BFD0D6; border-radius: 6px; margin-left: 5px; cursor: default; }
     .badge-mode.edit { color: var(--danger); background: var(--danger-light); border-color: #E7BABA; }
+    .badge-mode.edit-rest { color: var(--success); background: var(--success-light); border-color: #C7DCCB; }
     .badge-role { background: var(--info-light); color: #356570; border: 1px solid #C7DDE1; padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-left: 5px; }
+
     .duration-display { font-weight: bold; color: var(--danger); margin-top: 5px; font-size: 14px; }
     .cumulative-display { font-weight: bold; color: var(--info); margin-top: 5px; font-size: 14px; }
     .error-text { color: var(--danger); font-size: 13px; font-weight: bold; margin-top: 5px; }
     .group-warning-text { color: var(--primary); background-color: var(--primary-light); padding: 9px 12px; border: 1px solid #C7D9DE; border-radius: 7px; font-size: 13px; font-weight: bold; margin-top: 5px; line-height: 1.5; }
+
     .swal2-title { font-size: 1.5rem !important; color: var(--primary) !important; }
     .swal2-html-container { font-size: 1.1rem !important; color: var(--text) !important; }
-    
+
     .quick-links-container { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #C9D0D3; }
     .capsule-link { display: inline-flex; align-items: center; justify-content: center; padding: 9px 18px; text-decoration: none; border-radius: 50px; font-size: 14px; font-weight: bold; transition: all 0.2s ease; }
     .link-blue { background-color: var(--primary-light); color: var(--primary); border: 1px solid #C6D5DA; }
@@ -108,13 +95,21 @@
     .link-green:hover { background-color: #DCEBDD; transform: translateY(-2px); }
     .link-orange { background-color: var(--warning-light); color: #A87525; border: 1px solid #E6C990; }
     .link-orange:hover { background-color: #F5E5C2; transform: translateY(-2px); }
+
+    .upcoming-card { border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 9px; padding: 12px; margin-bottom: 10px; background: #FFFFFF; cursor: pointer; box-shadow: var(--shadow-sm); transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+    .upcoming-card:hover { background: var(--preset-bg); transform: translateX(3px); border-color: #BFD0D6; box-shadow: 0 4px 12px rgba(63, 95, 111, 0.1); }
+    
+    /* 輔助工具 class，讓隱藏的區塊或特例文字可變換顏色 */
+    .text-danger { color: var(--danger) !important; }
+    .text-muted { color: var(--text-muted) !important; }
   </style>
 </head>
 <body>
 
   <div class="container">
+    
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v1.1.0-beta3)</h2>
       
       <div class="form-group">
         <label>帳號</label>
@@ -125,19 +120,25 @@
         <input type="password" id="loginPassword" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter') document.getElementById('loginBtn').click()">
       </div>
       <button onclick="login()" id="loginBtn" style="width: 100%; margin-top: 10px;">登入</button>
-      
+    
       <div class="quick-links-container">
         <a href="https://pwdsvr.wda.gov.tw/" target="_blank" class="capsule-link link-blue">勞委系統(紀錄)</a>
         <a href="https://www.fd-enableap.taipei/enableap/" target="_blank" class="capsule-link link-green">基金系統(月報)</a>
         <a href="https://vrs2.wda.gov.tw/eVRS" target="_blank" class="capsule-link link-orange">專業人員系統(繼續教育)</a>
       </div>
+      <button type="button" class="btn-secondary" style="width: 100%; margin-top: 20px; font-size: 14px; padding: 8px; border: 2px dashed var(--warning);" onclick="devBypassLogin()">🛠️ (開發測試) 繞過登入，直接進入主畫面</button>
     </div>
 
     <div id="mainSection" class="hidden">
+      
       <div class="card" id="formCard">
         <div class="top-bar">
-          <div>歡迎，<strong id="currentUserSpan"></strong> <span class="hint">電話: <span id="currentPhoneSpan"></span></span></div>
           <div>
+            歡迎，<strong id="currentUserSpan"></strong> 
+            <span class="hint">電話: <span id="currentPhoneSpan"></span></span>
+          </div>
+          <div>
+            <button onclick="showUpcomingSchedules()" class="btn-warning" style="margin-right: 10px;">🔔 近期行程</button>
             <button onclick="openAccountSettings()" class="btn-info" style="margin-right: 10px;">⚙️ 帳號設定</button>
             <button onclick="logout()" class="btn-secondary">登出系統</button>
           </div>
@@ -161,44 +162,16 @@
         <form id="scheduleForm" onsubmit="submitSchedule(event)">
           <div class="grid">
             <div class="form-group">
-              <label>服務使用者姓名 <button type="button" id="unlockCoreBtn" class="btn-warning hidden" onclick="unlockCoreFields()" style="margin-left: 10px; font-size: 12px; padding: 3px 8px;">🔓 解鎖編輯基本資料</button></label>
-              <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration()">
+              <label>
+                服務使用者姓名 
+                <button type="button" id="unlockCoreBtn" class="btn-warning hidden" onclick="unlockCoreFields()" style="margin-left: 10px; font-size: 12px; padding: 3px 8px;">🔓 解鎖編輯基本資料</button>
+              </label>
+              <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration(); triggerCalculateDuration();">
             </div>
             <div class="form-group">
               <label>到職日期</label>
               <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
             </div>
-          </div>
-
-          <div class="time-block-box">
-            <div class="grid">
-              <div class="form-group">
-                <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden text-danger">(修改模式不可更改)</span></label>
-                <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration(); calculateTotalDuration();">
-                <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
-              </div>
-              <div class="form-group">
-                <label>⏰ 預計職場輔導時段</label>
-                <div id="timeRowsContainer"></div>
-                <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
-                
-                <!-- ★ 補回遺失的休息時段區塊 -->
-                <div class="form-group" style="margin-top: 15px; padding: 12px; background-color: var(--preset-bg); border: 1px dashed var(--preset-border); border-radius: 6px;">
-                  <label>☕ 休息時段 <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(系統將自動精準扣除與上方重疊的分鐘數)</span></label>
-                  <div id="breakTimeRowsContainer"></div>
-                  <button type="button" class="btn-add" style="background-color: var(--info);" onclick="addBreakTimeRow()">➕ 新增休息時段</button>
-                </div>
-
-                <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤，請修正！</div>
-                <div id="agentOverlapWarning" class="error-text hidden">⚠️ 警告：此時段已有其他安排！</div>
-                
-                <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
-                <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid">
             <div class="form-group">
               <label>事業單位名稱</label>
               <input type="text" id="companyName" required oninput="onCompanyInput()" placeholder="例如：小杉文化股份有限公司">
@@ -207,9 +180,6 @@
               <label>工作地地址</label>
               <input type="text" id="workAddress" required placeholder="例如：台北市信義區市府路1號">
             </div>
-          </div>
-
-          <div class="grid">
             <div class="form-group">
               <label>工作地聯絡人</label>
               <input type="text" id="contactPerson" required>
@@ -218,6 +188,35 @@
               <label>聯絡人電話</label>
               <input type="tel" id="contactPhone" required>
             </div>
+          </div>
+
+          <div class="time-block-box">
+            <div class="grid">
+              <div class="form-group">
+                <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden text-danger">(修改模式不可更改)</span></label>
+                <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration(); triggerCalculateDuration();">
+                <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
+              </div>
+              <div class="form-group">
+                <label>⏰ 預計職場輔導時段 <span class="hint">(下拉選單模式)</span></label>
+                <div id="timeRowsContainer"></div>
+                <button type="button" class="btn-add" id="addTimeBtn" onclick="addTimeRow()">➕ 新增時段</button>
+                
+                <div id="overlapWarning" class="error-text hidden">⚠️ 警告：時段設定有錯誤或重疊，請修正！</div>
+                <div id="agentOverlapWarning" class="error-text hidden"></div>
+              </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px dashed var(--border); margin: 15px 0;">
+            <div class="form-group">
+              <label>☕ 休息時間 <span class="hint">(選填，將自動計算重疊並扣除時數)</span></label>
+              <div id="restRowsContainer"></div>
+              <button type="button" id="addRestBtn" class="btn-add" style="background-color: var(--info);" onclick="addRestRow()">➕ 新增休息時段</button>
+              <div id="restWarning" class="error-text hidden">⚠️ 警告：休息時間設定有錯誤 (結束需晚於開始)，請修正或留空！</div>
+            </div>
+            
+            <div class="duration-display" id="totalDurationText">本次執行時間：0小時00分</div>
+            <div class="cumulative-display" id="cumulativeDurationText">累計總執行時間：---</div>
           </div>
 
           <div class="form-group">
@@ -240,6 +239,13 @@
               <input type="tel" id="agentPhone" readonly>
             </div>
           </div>
+          
+          <div class="form-group" style="margin-top: 20px; text-align: center;">
+            <label style="display: inline-block; cursor: pointer; color: var(--danger); background-color: var(--danger-light); padding: 8px 15px; border-radius: 7px; border: 1px solid #E7BABA;">
+              <input type="checkbox" id="silentSave" style="width: auto; transform: scale(1.2); margin-right: 5px;"> 
+              🔇 僅補登 / 微調資料 (本次不發送通報信件)
+            </label>
+          </div>
 
           <button type="submit" id="submitBtn">儲存並送出通報通知</button>
         </form>
@@ -247,21 +253,30 @@
 
       <div class="card">
         <h3>🔍 歷史通報紀錄查詢 <span id="viewPermissionBadge" class="badge-role"></span></h3>
-        <div class="hint" style="margin-bottom: 8px;">💡 提示：點擊下方任意紀錄表格項目，即可將資料帶回上方表單重新修改與寄信！</div>
+        <div class="hint" style="margin-bottom: 8px;">💡 提示：請點擊左側「操作」欄位內的按鈕進行對應功能。</div>
+        
         <div class="search-box">
-          <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)">
+          <select id="dateFilterSelect" onchange="filterData()" style="width: auto; padding: 8px; border: 1px solid var(--border); border-radius: 7px; font-weight: bold; color: var(--primary); background-color: var(--bg); flex-shrink: 0;">
+            <option value="1m" selected>📅 近 1 個月</option>
+            <option value="last_m">📅 上個月</option>
+            <option value="3m">📅 最近 3 個月</option>
+            <option value="6m">📅 最近半年</option>
+            <option value="all">📅 顯示全部</option>
+          </select>
+          <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)" style="flex: 1; min-width: 200px;">
         </div>
 
         <div style="overflow-x: auto;">
-        <table>
-          <thead id="dataTableHead">
-          </thead>
-          <tbody id="dataTableBody">
-            <tr><td colspan="11" style="text-align: center;">載入中...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      </div>
+          <table>
+            <thead id="dataTableHead">
+            </thead>
+            <tbody id="dataTableBody">
+              <tr><td colspan="11" style="text-align: center;">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div> 
+
     </div> 
   </div>
 
@@ -274,62 +289,149 @@
     let allSchedules = [];
     let isEditMode = false;
     let currentEditRecordId = null; 
+    let currentOverlapState = null; 
+    let currentFormMode = 'add'; 
 
+    const CORE_FIELDS = ['clientName', 'onboardDate', 'companyName', 'workAddress', 'contactPerson', 'contactPhone'];
+
+    // ★ 訊息視窗也改吃新版 CSS 變數顏色
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: 'var(--primary)' }),
       success: (title, text) => Swal.fire({ title: title, text: text, icon: 'success', confirmButtonColor: 'var(--success)' }),
       error: (title, text) => Swal.fire({ title: title, text: text, icon: 'error', confirmButtonColor: 'var(--danger)' })
     };
 
-    function cleanAndToHalfWidth(str) {
+    function cleanAndToHalfWidth(str, isRemarks = false) {
       if (!str) return "";
-      let result = str.toString().replace(/\s+/g, "");
-      return result.replace(/[\uFF01-\uFF5E]/g, function(ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xfee0); });
+      let result = str.toString();
+      if (!isRemarks) {
+        result = result.replace(/\s+/g, ""); 
+      }
+      return result.replace(/[\uFF01-\uFF5E]/g, function(ch) {
+        return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
+      }).replace(/\u3000/g, " ").trim();
     }
 
-    function sanitizeInput(str) { return String(str || "").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function sanitizeInput(str) {
+      if (!str) return "";
+      return str.toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function devBypassLogin() {
+        currentUser = {
+            username: 'dev_admin',
+            name: '開發測試員',
+            phone: '0912345678',
+            email: 'dev@test.com',
+            role: 'admin'
+        };
+        sessionToken = 'FAKE_TOKEN_FOR_DEV';
+
+        const roleText = currentUser.role === 'admin' ? '主管' : '就服員';
+        document.getElementById('currentUserSpan').innerText = `${currentUser.name} (${roleText})`;
+        document.getElementById('currentPhoneSpan').innerText = currentUser.phone;
+        document.getElementById('viewPermissionBadge').innerText = currentUser.role === 'admin' ? '主管權限：檢視所有人' : '檢視個人紀錄';
+        
+        document.getElementById('agentName').value = currentUser.name;
+        document.getElementById('agentPhone').value = currentUser.phone;
+
+        if (currentUser.role === 'admin') {
+            document.getElementById('agentFieldsContainer').classList.remove('hidden');
+        } else {
+            document.getElementById('agentFieldsContainer').classList.add('hidden');
+        }
+
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('mainSection').classList.remove('hidden');
+
+        initTimeRows();
+        allSchedules = [
+            { id: Date.now(), originalIndex: 0, clientName: '王小明', onboardDate: '2026-08-01', coachingDate: '2026-08-25', coachingTime: '09:00-12:00', restTime: '12:00-13:00', totalDuration: '2小時00分', cumText: '2小時00分', companyName: '測試企業', workAddress: '台北市測試路', contactPerson: '李主管', contactPhone: "'0987654321", agentName: '開發測試員', actionLog: '無', breakTime: '' }
+        ];
+        renderHistoryDropdown();
+        filterData();
+        SysMsg.success('開發模式', '已繞過登入，直接進入主畫面。');
+    }
 
     async function login() {
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
       const btn = document.getElementById('loginBtn');
+
       if (!username || !password) return SysMsg.alert('請輸入帳號與密碼');
 
-      btn.disabled = true; btn.innerText = "登入中...";
+      btn.disabled = true;
+      btn.innerText = "登入中...";
+
       try {
-        const response = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username, password }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'login', username, password }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
         const res = await response.json();
+
         if (res.status === 'success') {
-          currentUser = res.user; sessionToken = res.token;
+          currentUser = res.user;
+          sessionToken = res.token;
+
           const roleText = currentUser.role === 'admin' ? '主管' : '就服員';
           document.getElementById('currentUserSpan').innerText = `${currentUser.name} (${roleText})`;
           document.getElementById('currentPhoneSpan').innerText = currentUser.phone;
           document.getElementById('viewPermissionBadge').innerText = currentUser.role === 'admin' ? '主管權限：檢視所有人' : '檢視個人紀錄';
+          
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
+
+          if (currentUser.role === 'admin') {
+             document.getElementById('agentFieldsContainer').classList.remove('hidden');
+          } else {
+             document.getElementById('agentFieldsContainer').classList.add('hidden');
+          }
+
           document.getElementById('loginSection').classList.add('hidden');
           document.getElementById('mainSection').classList.remove('hidden');
 
           initTimeRows();
           loadSchedules(); 
-        } else SysMsg.error('登入失敗', res.message);
-      } catch (err) { SysMsg.error('連線錯誤', err.message); } finally { btn.disabled = false; btn.innerText = "登入"; }
+        } else {
+          SysMsg.error('登入失敗', res.message);
+        }
+      } catch (err) {
+        SysMsg.error('連線錯誤', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "登入";
+      }
     }
 
     async function fetchWithAuth(payload) {
-      payload.username = currentUser.username; payload.token = sessionToken;
-      const response = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+      payload.username = currentUser.username;
+      payload.token = sessionToken;
+      const response = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
       const res = await response.json();
-      if (res.status === 'error' && res.message.includes('身分驗證失敗')) { SysMsg.alert(res.message); logout(true); throw new Error('Unauthorized'); }
+      if (res.status === 'error' && res.message.includes('身分驗證失敗')) {
+        SysMsg.alert(res.message);
+        logout(true);
+        throw new Error('Unauthorized');
+      }
       return res;
     }
 
     async function logout(force = false) {
-      if (!force && currentUser && sessionToken) { await fetchWithAuth({ action: 'logout' }).catch(() => {}); }
-      currentUser = null; sessionToken = null;
+      if (!force && currentUser && sessionToken) {
+        await fetchWithAuth({ action: 'logout' }).catch(() => {});
+      }
+      currentUser = null;
+      sessionToken = null;
       document.getElementById('mainSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
+      sessionStorage.removeItem('hasShownUpcoming'); 
     }
 
     async function openAccountSettings() {
@@ -338,18 +440,23 @@
         html:
           '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:var(--primary);">📝 聯絡資訊</div>' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">聯絡電話：</div>' +
-          `<input id="swal-input-phone" type="tel" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border-radius:7px; border:1px solid var(--border);" value="${currentUser.phone || ''}" placeholder="請輸入聯絡電話">` +
+          `<input id="swal-input-phone" type="tel" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px;" value="${currentUser.phone || ''}" placeholder="請輸入聯絡電話">` +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">電子郵件 (Email)：</div>' +
-          `<input id="swal-input-email" type="email" class="swal2-input" style="margin-top:0; margin-bottom:20px; width:100%; box-sizing:border-box; border-radius:7px; border:1px solid var(--border);" value="${currentUser.email || ''}" placeholder="請輸入電子郵件信箱">` +
+          `<input id="swal-input-email" type="email" class="swal2-input" style="margin-top:0; margin-bottom:20px; width:100%; box-sizing:border-box; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px;" value="${currentUser.email || ''}" placeholder="請輸入電子郵件信箱">` +
           '<hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">' +
           '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:var(--danger);">🔑 變更密碼 <span style="font-size:12px; font-weight:normal; color:var(--text-muted);">(若不修改請留空)</span></div>' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">舊密碼：</div>' +
-          '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border-radius:7px; border:1px solid var(--border);" placeholder="請輸入目前的密碼">' +
+          '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px;" placeholder="請輸入目前的密碼">' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">新密碼：</div>' +
-          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border-radius:7px; border:1px solid var(--border);" placeholder="請設定新密碼">' +
+          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px;" placeholder="請設定新密碼">' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">確認新密碼：</div>' +
-          '<input id="swal-input-confirm" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box; border-radius:7px; border:1px solid var(--border);" placeholder="請再次輸入新密碼">',
-        focusConfirm: false, showCancelButton: true, confirmButtonColor: 'var(--info)', cancelButtonColor: 'var(--secondary)', confirmButtonText: '儲存設定', cancelButtonText: '取消',
+          '<input id="swal-input-confirm" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px;" placeholder="請再次輸入新密碼">',
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonColor: 'var(--info)',
+        cancelButtonColor: 'var(--secondary)',
+        confirmButtonText: '儲存設定',
+        cancelButtonText: '取消',
         preConfirm: () => {
           const newPhone = document.getElementById('swal-input-phone').value.trim();
           const newEmail = document.getElementById('swal-input-email').value.trim();
@@ -369,15 +476,26 @@
       if (formValues) {
         try {
           Swal.fire({ title: '處理中', text: '正在更新...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-          const res = await fetchWithAuth({ action: 'updateAccountSettings', phone: formValues.newPhone, email: formValues.newEmail, oldPassword: formValues.oldPwd, newPassword: formValues.newPwd });
+          const res = await fetchWithAuth({
+            action: 'updateAccountSettings',
+            phone: formValues.newPhone,
+            email: formValues.newEmail,
+            oldPassword: formValues.oldPwd,
+            newPassword: formValues.newPwd
+          });
           if (res.status === 'success') {
-            currentUser.phone = formValues.newPhone; currentUser.email = formValues.newEmail;
+            currentUser.phone = formValues.newPhone;
+            currentUser.email = formValues.newEmail;
             document.getElementById('currentPhoneSpan').innerText = currentUser.phone;
             document.getElementById('agentPhone').value = currentUser.phone;
-            let successMsg = formValues.newPwd ? '您的聯絡資訊與密碼已更新完畢！下次請使用新密碼。' : '聯絡資訊已更新完畢！';
-            SysMsg.success('更新成功', successMsg);
-          } else SysMsg.error('更新失敗', res.message);
-        } catch (err) { if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message); }
+            let msg = formValues.newPwd ? '聯絡資訊與密碼已更新！下次請使用新密碼。' : '聯絡資訊已更新！';
+            SysMsg.success('更新成功', msg);
+          } else {
+            SysMsg.error('更新失敗', res.message);
+          }
+        } catch (err) {
+          if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
+        }
       }
     }
 
@@ -395,6 +513,7 @@
       
       currentFormMode = mode;
       isEditMode = (mode === 'edit' || mode === 'edit-rest');
+      document.getElementById('silentSave').checked = false; 
 
       if (mode === 'edit') {
         badge.innerText = '【修改重發模式】';
@@ -403,7 +522,7 @@
         cancelBtn.classList.remove('hidden');
         if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
         else actionLogContainer.classList.add('hidden');
-        document.getElementById('formCard').style.backgroundColor = '#ffe5e5'; 
+        document.getElementById('formCard').style.backgroundColor = 'var(--danger-light)'; 
         presetCard.classList.add('hidden');
         coachingDateInput.readOnly = true;
         dateLockHint.classList.remove('hidden');
@@ -412,10 +531,8 @@
         CORE_FIELDS.forEach(id => { 
             if(id === 'clientName' || id === 'onboardDate' || id === 'companyName') {
                document.getElementById(id).readOnly = true; 
-               document.getElementById(id).style.backgroundColor = '#e9ecef';
             } else {
                document.getElementById(id).readOnly = false; 
-               document.getElementById(id).style.backgroundColor = '';
             }
         });
         addTimeBtn.classList.remove('hidden');
@@ -428,18 +545,16 @@
         cancelBtn.classList.add('hidden');
         if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
         else actionLogContainer.classList.add('hidden');
-        document.getElementById('formCard').style.backgroundColor = '#e8f4ff'; 
+        document.getElementById('formCard').style.backgroundColor = 'var(--success-light)'; 
         presetCard.classList.add('hidden');
         coachingDateInput.readOnly = true;
         dateLockHint.classList.remove('hidden');
         unlockBtn.classList.add('hidden');
         
-        CORE_FIELDS.forEach(id => { 
-           document.getElementById(id).readOnly = true; 
-           document.getElementById(id).style.backgroundColor = '#e9ecef';
-        });
+        CORE_FIELDS.forEach(id => { document.getElementById(id).readOnly = true; });
         addTimeBtn.classList.add('hidden');
         submitBtn.innerText = '儲存補登 (不寄發信件)';
+        document.getElementById('silentSave').checked = true;
 
       } else {
         badge.innerText = '【新增模式】';
@@ -447,7 +562,7 @@
         switchBtn.classList.add('hidden');
         cancelBtn.classList.add('hidden');
         actionLogContainer.classList.add('hidden'); 
-        document.getElementById('formCard') ? document.getElementById('formCard').style.backgroundColor = 'white' : null;
+        document.getElementById('formCard') ? document.getElementById('formCard').style.backgroundColor = 'var(--card)' : null;
         presetCard.classList.remove('hidden');
         coachingDateInput.readOnly = false;
         dateLockHint.classList.add('hidden');
@@ -455,10 +570,7 @@
         currentEditRecordId = null; 
         document.getElementById('actionLog').value = ''; 
         
-        CORE_FIELDS.forEach(id => { 
-           document.getElementById(id).readOnly = false; 
-           document.getElementById(id).style.backgroundColor = '';
-        });
+        CORE_FIELDS.forEach(id => { document.getElementById(id).readOnly = false; });
         addTimeBtn.classList.remove('hidden');
         submitBtn.innerText = '儲存並送出通報通知';
       }
@@ -466,20 +578,32 @@
 
     function switchToAddMode() {
       Swal.fire({
-        title: '操作確認', text: '確定切換回「新增模式」嗎？表單上未儲存的資料將會遺失。', icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--primary)', cancelButtonColor: 'var(--secondary)', confirmButtonText: '確定切換', cancelButtonText: '取消'
+        title: '操作確認',
+        text: '確定切換回「新增模式」嗎？表單上未儲存的資料將會遺失。',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: 'var(--secondary)',
+        confirmButtonText: '確定切換',
+        cancelButtonText: '取消'
       }).then((result) => {
         if (result.isConfirmed) {
-          document.getElementById('scheduleForm').reset(); document.getElementById('historySelect').value = '';
-          document.getElementById('agentName').value = currentUser.name; document.getElementById('agentPhone').value = currentUser.phone;
+          document.getElementById('scheduleForm').reset();
+          document.getElementById('historySelect').value = '';
+          document.getElementById('agentName').value = currentUser.name;
+          document.getElementById('agentPhone').value = currentUser.phone;
           document.getElementById('dateSequenceWarning').classList.add('hidden');
-          initTimeRows(); setFormMode('add'); updateCumulativeDuration(); 
+          initTimeRows();
+          document.getElementById('breakTimeRowsContainer').innerHTML = '';
+          setFormMode('add');
+          updateCumulativeDuration(); 
         }
       });
     }
 
     function unlockCoreFields() {
-       if (!isEditMode) {
-           ['clientName', 'onboardDate', 'companyName'].forEach(id => { document.getElementById(id).readOnly = false; });
+       if (currentFormMode === 'add') {
+           CORE_FIELDS.forEach(id => { document.getElementById(id).readOnly = false; });
            document.getElementById('unlockCoreBtn').classList.add('hidden');
            SysMsg.success('解鎖成功', '基本資料已開放編輯。請確認修改無誤。');
        }
@@ -487,7 +611,14 @@
 
     function cancelCoaching() {
       Swal.fire({
-        title: '發送確認', text: '確定發送【取消當日支持輔導】通知嗎？此操作將覆蓋此筆資料並留下取消紀錄。', icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--danger)', cancelButtonColor: 'var(--secondary)', confirmButtonText: '確定取消', cancelButtonText: '返回'
+        title: '發送確認',
+        text: '確定發送【取消當日支持輔導】通知嗎？此筆資料將被標記取消。',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: 'var(--secondary)',
+        confirmButtonText: '確定取消',
+        cancelButtonText: '返回'
       }).then((result) => {
         if (result.isConfirmed) {
           const cDate = document.getElementById('coachingDate').value;
@@ -499,222 +630,465 @@
     }
 
     function checkDateSequence() {
-      const onboardDateVal = document.getElementById('onboardDate').value, coachingDateVal = document.getElementById('coachingDate').value, warningEl = document.getElementById('dateSequenceWarning');
-      if (onboardDateVal && coachingDateVal && new Date(coachingDateVal) < new Date(onboardDateVal)) { warningEl.classList.remove('hidden'); return false; }
-      warningEl.classList.add('hidden'); return true;
+      const onboardDateVal = document.getElementById('onboardDate').value;
+      const coachingDateVal = document.getElementById('coachingDate').value;
+      const warningEl = document.getElementById('dateSequenceWarning');
+
+      if (onboardDateVal && coachingDateVal) {
+        if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
+          warningEl.classList.remove('hidden');
+          return false;
+        }
+      }
+      warningEl.classList.add('hidden');
+      return true;
     }
 
-    // --- 輔導時段管理 ---
     function initTimeRows() {
-      document.getElementById('timeRowsContainer').innerHTML = '';
+      const container = document.getElementById('timeRowsContainer');
+      container.innerHTML = '';
       addTimeRow("09:00", "12:00");
-      document.getElementById('breakTimeRowsContainer').innerHTML = ''; 
     }
 
     function addTimeRow(startVal = "", endVal = "") {
       const container = document.getElementById('timeRowsContainer');
       if (!startVal && !endVal) {
         const endInputs = document.querySelectorAll('.end-time');
-        if (endInputs.length > 0) { const lastEnd = endInputs[endInputs.length - 1].value; if (lastEnd) startVal = lastEnd; }
+        if (endInputs.length > 0) {
+          const lastEnd = endInputs[endInputs.length - 1].value;
+          if (lastEnd) startVal = lastEnd;
+        }
       }
-      const rowDiv = document.createElement('div'); rowDiv.className = 'time-row';
-      rowDiv.innerHTML = `<input type="time" class="start-time" value="${startVal}" onchange="calculateTotalDuration()" required> 至 <input type="time" class="end-time" value="${endVal}" onchange="calculateTotalDuration()" required> <button type="button" class="btn-remove" onclick="removeTimeRow(this)">✕</button>`;
-      container.appendChild(rowDiv); calculateTotalDuration();
+
+      let sh = "", sm = "", eh = "", em = "";
+      if (startVal) { const parts = startVal.split(':'); sh = parts[0]; sm = parts[1]; }
+      if (endVal) { const parts = endVal.split(':'); eh = parts[0]; em = parts[1]; }
+
+      const isRestOnly = (currentFormMode === 'edit-rest');
+      const createSelect = (className, max, selectedVal) => {
+        let html = `<select class="${className} time-select" onchange="triggerCalculateDuration()" required ${isRestOnly ? 'disabled' : ''}>`;
+        html += `<option value="" disabled ${!selectedVal ? 'selected' : ''}>--</option>`;
+        for(let i = 0; i < max; i++){
+            let val = i.toString().padStart(2, '0');
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
+        }
+        html += `</select>`;
+        return html;
+      };
+
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'time-row';
+      rowDiv.innerHTML = `
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('start-hour', 25, sh)} <span style="font-weight:bold; color:var(--text-muted);">時</span> 
+            ${createSelect('start-minute', 60, sm)} <span style="font-weight:bold; color:var(--text-muted);">分</span>
+        </div>
+        <span style="margin: 0 8px; font-weight:bold; color:var(--text-muted);">至</span>
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('end-hour', 25, eh)} <span style="font-weight:bold; color:var(--text-muted);">時</span> 
+            ${createSelect('end-minute', 60, em)} <span style="font-weight:bold; color:var(--text-muted);">分</span>
+        </div>
+        <button type="button" class="btn-remove" style="margin-left: 5px; ${isRestOnly ? 'display:none;' : ''}" onclick="removeTimeRow(this)">✕</button>
+      `;
+      container.appendChild(rowDiv);
+      triggerCalculateDuration();
     }
+
     function removeTimeRow(btn) {
-      if (document.getElementById('timeRowsContainer').children.length > 1) { btn.parentElement.remove(); calculateTotalDuration(); } else SysMsg.alert("至少需要保留一個時段！");
+      const container = document.getElementById('timeRowsContainer');
+      if (container.children.length > 1) {
+        btn.parentElement.remove();
+        triggerCalculateDuration();
+      } else {
+        SysMsg.alert("至少需要保留一個時段！");
+      }
     }
 
-    // --- 休息時段管理 ---
-    function addBreakTimeRow(startVal = "", endVal = "") {
-      const container = document.getElementById('breakTimeRowsContainer');
-      const rowDiv = document.createElement('div'); rowDiv.className = 'time-row';
-      rowDiv.innerHTML = `<input type="time" class="break-start-time" value="${startVal}" onchange="calculateTotalDuration()" required> 至 <input type="time" class="break-end-time" value="${endVal}" onchange="calculateTotalDuration()" required> <button type="button" class="btn-remove" style="background-color: var(--secondary);" onclick="removeBreakTimeRow(this)">✕</button>`;
-      container.appendChild(rowDiv); calculateTotalDuration();
-    }
-    function removeBreakTimeRow(btn) { btn.parentElement.remove(); calculateTotalDuration(); }
-    function getFormattedBreakTimeSlots() {
-      const startInputs = document.querySelectorAll('.break-start-time'), endInputs = document.querySelectorAll('.break-end-time');
-      let slots = [];
-      for (let i = 0; i < startInputs.length; i++) { if (startInputs[i].value && endInputs[i].value) slots.push(`${startInputs[i].value}-${endInputs[i].value}`); }
-      return slots.join('、');
-    }
-
-    // --- 時間計算與交集處理 ---
-    function parseTimeToMinutes(timeStr) {
-      if(!timeStr) return 0; const parts = timeStr.split(':');
-      if(parts.length !== 2) return 0; return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-    }
-
-    function calculateTotalDuration() {
-      const startInputs = document.querySelectorAll('.start-time'), endInputs = document.querySelectorAll('.end-time');
-      let intervals = [], hasTimeError = false, errorMsg = "";
-
-      for (let i = 0; i < startInputs.length; i++) {
-        const start = startInputs[i].value, end = endInputs[i].value;
-        if (start && end) {
-          let sMin = parseTimeToMinutes(start), eMin = parseTimeToMinutes(end);
-          if (eMin < sMin) { hasTimeError = true; errorMsg = "結束時間不可早於開始時間，請修正！"; } 
-          else if (eMin > sMin) intervals.push({ start: sMin, end: eMin });
+    function addRestRow(startVal = "", endVal = "") {
+      const container = document.getElementById('restRowsContainer');
+      if (!startVal && !endVal) {
+        const endHours = document.querySelectorAll('.rest-end-hour');
+        const endMins = document.querySelectorAll('.rest-end-minute');
+        if (endHours.length > 0) {
+          const h = endHours[endHours.length - 1].value;
+          const m = endMins[endMins.length - 1].value;
+          if (h && m) startVal = `${h}:${m}`;
         }
       }
 
-      intervals.sort((a, b) => a.start - b.start);
-      let totalMinutes = 0, hasOverlap = false;
+      let sh = "", sm = "", eh = "", em = "";
+      if (startVal) { const parts = startVal.split(':'); sh = parts[0]; sm = parts[1]; }
+      if (endVal) { const parts = endVal.split(':'); eh = parts[0]; em = parts[1]; }
 
-      if (intervals.length > 0 && !hasTimeError) {
-        let current = intervals[0];
-        for (let i = 1; i < intervals.length; i++) {
-          if (intervals[i].start < current.end) { hasOverlap = true; errorMsg = "輔導時段設定有重疊，請修正！"; current.end = Math.max(current.end, intervals[i].end); } 
-          else { totalMinutes += (current.end - current.start); current = intervals[i]; }
+      const createSelect = (className, max, selectedVal) => {
+        let html = `<select class="${className} time-select" style="background-color:var(--bg);" onchange="triggerCalculateDuration()">`;
+        html += `<option value="" ${!selectedVal ? 'selected' : ''}>--</option>`;
+        for(let i = 0; i < max; i++){
+            let val = i.toString().padStart(2, '0');
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
         }
-        totalMinutes += (current.end - current.start);
-      }
+        html += `</select>`;
+        return html;
+      };
 
-      // 處理休息時間扣除
-      const breakStartInputs = document.querySelectorAll('.break-start-time'), breakEndInputs = document.querySelectorAll('.break-end-time');
-      let breakIntervals = [];
-      for (let i = 0; i < breakStartInputs.length; i++) {
-        const bStart = breakStartInputs[i].value, bEnd = breakEndInputs[i].value;
-        if (bStart && bEnd) {
-          const sMin = parseTimeToMinutes(bStart), eMin = parseTimeToMinutes(bEnd);
-          if (eMin <= sMin) { hasTimeError = true; errorMsg = "休息時段的結束時間不可早於開始時間！"; } 
-          else breakIntervals.push({ start: sMin, end: eMin });
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'time-row rest-row';
+      rowDiv.innerHTML = `
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('rest-start-hour', 25, sh)} <span style="font-weight:bold; color:var(--text-muted);">時</span> 
+            ${createSelect('rest-start-minute', 60, sm)} <span style="font-weight:bold; color:var(--text-muted);">分</span>
+        </div>
+        <span style="margin: 0 8px; font-weight:bold; color:var(--text-muted);">至</span>
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+            ${createSelect('rest-end-hour', 25, eh)} <span style="font-weight:bold; color:var(--text-muted);">時</span> 
+            ${createSelect('rest-end-minute', 60, em)} <span style="font-weight:bold; color:var(--text-muted);">分</span>
+        </div>
+        <button type="button" class="btn-remove" style="margin-left: 5px; background-color:var(--secondary);" onclick="removeRestRow(this)">✕</button>
+      `;
+      container.appendChild(rowDiv);
+      triggerCalculateDuration();
+    }
+
+    function removeRestRow(btn) {
+      btn.parentElement.remove();
+      triggerCalculateDuration();
+    }
+
+    function getValidIntervalsFromUI() {
+      const sHours = document.querySelectorAll('.start-hour');
+      const sMins = document.querySelectorAll('.start-minute');
+      const eHours = document.querySelectorAll('.end-hour');
+      const eMins = document.querySelectorAll('.end-minute');
+      
+      let intervals = [];
+      let hasError = false;
+
+      for (let i = 0; i < sHours.length; i++) {
+        const sh = sHours[i].value;
+        const sm = sMins[i].value;
+        const eh = eHours[i].value;
+        const em = eMins[i].value;
+        
+        if (sh && sm && eh && em) {
+          const sMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+          const eMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+          if (isNaN(sMin) || isNaN(eMin) || eMin <= sMin) {
+             hasError = true;
+          } else {
+             intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
+          }
+        } else {
+          hasError = true; 
         }
       }
+      return { intervals, hasError };
+    }
 
-      breakIntervals.sort((a, b) => a.start - b.start);
-      let mergedBreaks = [];
-      if (breakIntervals.length > 0 && !hasTimeError) {
-        let curr = breakIntervals[0];
-        for (let i = 1; i < breakIntervals.length; i++) {
-          if (breakIntervals[i].start <= curr.end) curr.end = Math.max(curr.end, breakIntervals[i].end); 
-          else { mergedBreaks.push(curr); curr = breakIntervals[i]; }
+    function getValidRestIntervalsFromUI() {
+      const sHours = document.querySelectorAll('.rest-start-hour');
+      const sMins = document.querySelectorAll('.rest-start-minute');
+      const eHours = document.querySelectorAll('.rest-end-hour');
+      const eMins = document.querySelectorAll('.rest-end-minute');
+      
+      let intervals = [];
+      let hasError = false;
+
+      for (let i = 0; i < sHours.length; i++) {
+        const sh = sHours[i].value;
+        const sm = sMins[i].value;
+        const eh = eHours[i].value;
+        const em = eMins[i].value;
+        
+        if (!sh && !sm && !eh && !em) continue; 
+        if (sh && sm && eh && em) {
+          const sMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+          const eMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+          if (isNaN(sMin) || isNaN(eMin) || eMin <= sMin) {
+             hasError = true;
+          } else {
+             intervals.push({ start: sMin, end: eMin, str: `${sh}:${sm}-${eh}:${em}` });
+          }
+        } else {
+          hasError = true; 
         }
-        mergedBreaks.push(curr);
       }
+      return { intervals, hasError };
+    }
 
-      if (!hasTimeError && intervals.length > 0 && mergedBreaks.length > 0) {
-        let totalOverlap = 0;
-        for (let c of intervals) {
-          for (let b of mergedBreaks) {
-            const oStart = Math.max(c.start, b.start), oEnd = Math.min(c.end, b.end);
-            if (oStart < oEnd) totalOverlap += (oEnd - oStart);
+    function processDurations(coachIntervals, restIntervals) {
+      if (coachIntervals.length === 0) return { totalMinutes: 0, hasOverlap: false };
+      
+      let sorted = [...coachIntervals].sort((a, b) => a.start - b.start);
+      let mergedCoaching = [];
+      let hasOverlap = false;
+
+      let current = { start: sorted[0].start, end: sorted[0].end };
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].start < current.end) {
+          hasOverlap = true;
+          current.end = Math.max(current.end, sorted[i].end);
+        } else {
+          mergedCoaching.push(current);
+          current = { start: sorted[i].start, end: sorted[i].end };
+        }
+      }
+      mergedCoaching.push(current);
+
+      let mergedRest = [];
+      if (restIntervals && restIntervals.length > 0) {
+        let rSorted = [...restIntervals].sort((a, b) => a.start - b.start);
+        let rCurr = { start: rSorted[0].start, end: rSorted[0].end };
+        for (let i = 1; i < rSorted.length; i++) {
+          if (rSorted[i].start <= rCurr.end) {
+            rCurr.end = Math.max(rCurr.end, rSorted[i].end);
+          } else {
+            mergedRest.push(rCurr);
+            rCurr = { start: rSorted[i].start, end: rSorted[i].end };
           }
         }
-        totalMinutes -= totalOverlap;
-        if (totalMinutes < 0) totalMinutes = 0;
+        mergedRest.push(rCurr);
       }
 
-      const btn = document.getElementById('submitBtn'), warningEl = document.getElementById('overlapWarning'), agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
-      let hasAgentOverlap = false, overlappingRecordName = "";
+      let totalMinutes = 0;
+      for (let c of mergedCoaching) {
+        let cTime = c.end - c.start;
+        let overlapTime = 0;
+        for (let r of mergedRest) {
+          let oStart = Math.max(c.start, r.start);
+          let oEnd = Math.min(c.end, r.end);
+          if (oStart < oEnd) {
+            overlapTime += (oEnd - oStart);
+          }
+        }
+        totalMinutes += (cTime - overlapTime);
+      }
+      return { totalMinutes, hasOverlap };
+    }
+
+    function parseTimeToMinutes(timeStr) {
+      if(!timeStr) return -1;
+      const parts = timeStr.split(':');
+      if(parts.length !== 2) return -1;
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (isNaN(h) || isNaN(m)) return -1;
+      return h * 60 + m;
+    }
+
+    function checkAgentScheduleOverlap(targetDateStr, newIntervals, currentClientName) {
+      if (!targetDateStr || newIntervals.length === 0) return null;
+      let existingSlots = [];
+      for (let item of allSchedules) {
+        const coachingTimeStr = String(item.coachingTime || ""); 
+        if (isEditMode && item.id === currentEditRecordId) continue;
+        if (coachingTimeStr.includes('取消')) continue;
+        
+        const itemCreator = item.createdBy || item.agentName; 
+        const currentCreator = currentUser.username || currentUser.name;
+        if (itemCreator !== currentCreator) continue; 
+        if (formatDate(item.coachingDate) !== targetDateStr) continue;
+
+        const timeSlots = coachingTimeStr.split('、'); 
+        for (let slot of timeSlots) {
+           const parts = slot.split('-');
+           if (parts.length === 2) {
+             existingSlots.push({
+               start: parseTimeToMinutes(parts[0]),
+               end: parseTimeToMinutes(parts[1]),
+               clientName: item.clientName,
+               timeStr: slot
+             });
+           }
+        }
+      }
+
+      let groupOverlapResult = null;
+      for (let newSlot of newIntervals) {
+        for (let existSlot of existingSlots) {
+          if (newSlot.start < existSlot.end && newSlot.end > existSlot.start) {
+            const existClientLower = cleanAndToHalfWidth(existSlot.clientName).toLowerCase();
+            const isSamePerson = (existClientLower === currentClientName);
+            if (isSamePerson) {
+              return { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: true }; 
+            } else {
+              if (!groupOverlapResult) {
+                groupOverlapResult = { clientName: existSlot.clientName, timeStr: existSlot.timeStr, isSamePerson: false };
+              }
+            }
+          }
+        }
+      }
+      return groupOverlapResult;
+    }
+
+    function triggerCalculateDuration() {
+      const btn = document.getElementById('submitBtn');
+      const warningEl = document.getElementById('overlapWarning');
+      const restWarningEl = document.getElementById('restWarning');
+      const agentOverlapWarningEl = document.getElementById('agentOverlapWarning');
       const formDateStr = document.getElementById('coachingDate').value;
+      const durationDisplay = document.getElementById('totalDurationText');
+      const currentClientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
 
-      if (formDateStr && intervals.length > 0 && !hasTimeError && !hasOverlap) {
-         const targetDateStr = formatDate(formDateStr);
-         let otherSchedulesIntervals = [];
-         for (let item of allSchedules) {
-            if (isEditMode && item.id === currentEditRecordId) continue;
-            if (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消')) continue;
-            if (item.createdBy !== currentUser.username) continue; 
-            if (formatDate(item.coachingDate) !== targetDateStr) continue;
+      currentOverlapState = null; 
 
-            const timeSlots = String(item.coachingTime).split('、');
-            for (let slot of timeSlots) {
-               const parts = slot.split('-');
-               if (parts.length === 2) otherSchedulesIntervals.push({ start: parseTimeToMinutes(parts[0]), end: parseTimeToMinutes(parts[1]), clientName: item.clientName });
-            }
-         }
+      const { intervals: coachIntervals, hasError: hasCoachError } = getValidIntervalsFromUI();
+      const { intervals: restIntervals, hasError: hasRestError } = getValidRestIntervalsFromUI();
 
-         for (let curr of intervals) {
-            for (let other of otherSchedulesIntervals) {
-               if (curr.start < other.end && curr.end > other.start) { hasAgentOverlap = true; overlappingRecordName = other.clientName; break; }
-            }
-            if (hasAgentOverlap) break;
-         }
+      if (hasCoachError) {
+        showErrorState("⚠️ 警告：時間格式不完整或結束早於開始，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
+        if(restWarningEl) restWarningEl.classList.add('hidden');
+        return "錯誤";
       }
 
-      if (hasAgentOverlap) { agentOverlapWarningEl.innerText = `⚠️ 警告：您在此日期與【${escapeHtml(overlappingRecordName)}】已有安排輔導，禁止重複排程！`; agentOverlapWarningEl.classList.remove('hidden'); } 
-      else agentOverlapWarningEl.classList.add('hidden');
-
-      if (hasTimeError || hasOverlap || hasAgentOverlap) {
-        if (hasTimeError || hasOverlap) { warningEl.innerText = `⚠️ 警告：${errorMsg}`; warningEl.classList.remove('hidden'); } 
-        else warningEl.classList.add('hidden');
-        btn.disabled = true; document.getElementById('totalDurationText').innerText = `本次執行時間：格式錯誤`;
-        updateCumulativeDuration(); return "錯誤";
+      if (hasRestError) {
+        if(restWarningEl) restWarningEl.classList.remove('hidden');
+        btn.disabled = true;
+        durationDisplay.innerText = `本次執行時間：格式錯誤`;
+        updateCumulativeDuration();
+        return "錯誤";
       } else {
-        warningEl.classList.add('hidden'); btn.disabled = false;
-        const hours = Math.floor(totalMinutes / 60), mins = totalMinutes % 60;
-        const durationText = `${hours}小時${mins.toString().padStart(2, '0')}分`;
-        document.getElementById('totalDurationText').innerText = `本次執行時間：${durationText}`;
-        updateCumulativeDuration(); return durationText;
+        if(restWarningEl) restWarningEl.classList.add('hidden');
       }
+
+      const { totalMinutes, hasOverlap: hasSelfOverlap } = processDurations(coachIntervals, restIntervals);
+      
+      if (hasSelfOverlap) {
+        showErrorState("⚠️ 警告：表單內的時段設定有重疊，請修正！", warningEl, durationDisplay, btn, agentOverlapWarningEl);
+        return "錯誤";
+      }
+
+      if (formDateStr && coachIntervals.length > 0) {
+        const overlapResult = checkAgentScheduleOverlap(formatDate(formDateStr), coachIntervals, currentClientName);
+        if (overlapResult) {
+          if (overlapResult.isSamePerson) {
+            const msg = `⚠️ 警告：您在此日期與【${escapeHtml(overlapResult.clientName)}】已有安排輔導 (${escapeHtml(overlapResult.timeStr)})，禁止重複排程！`;
+            agentOverlapWarningEl.className = 'error-text';
+            showErrorState(msg, agentOverlapWarningEl, durationDisplay, btn, warningEl);
+            return "錯誤";
+          } else {
+            currentOverlapState = overlapResult; 
+          }
+        }
+      }
+
+      if (currentOverlapState) {
+        agentOverlapWarningEl.innerHTML = `💡提示：您在此時段已有安排【${escapeHtml(currentOverlapState.clientName)}】。若本次為『群組安置』，可繼續送出通報。`;
+        agentOverlapWarningEl.className = 'group-warning-text';
+        agentOverlapWarningEl.classList.remove('hidden');
+      } else {
+        agentOverlapWarningEl.classList.add('hidden');
+      }
+
+      warningEl.classList.add('hidden');
+      btn.disabled = false;
+      
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      const durationText = `${hours}小時${mins.toString().padStart(2, '0')}分`;
+      durationDisplay.innerText = `本次執行時間：${durationText}`;
+      updateCumulativeDuration(); 
+      return durationText;
+    }
+
+    function showErrorState(message, showEl, displayEl, btn, hideEl) {
+       showEl.innerText = message;
+       showEl.classList.remove('hidden');
+       if (hideEl) hideEl.classList.add('hidden');
+       btn.disabled = true;
+       displayEl.innerText = `本次執行時間：格式錯誤`;
+       updateCumulativeDuration();
     }
 
     function getFormattedTimeSlots() {
-      const startInputs = document.querySelectorAll('.start-time'), endInputs = document.querySelectorAll('.end-time');
-      let slots = [];
-      for (let i = 0; i < startInputs.length; i++) { if (startInputs[i].value && endInputs[i].value) slots.push(`${startInputs[i].value}-${endInputs[i].value}`); }
-      return slots.join('、');
+      const { intervals } = getValidIntervalsFromUI();
+      return intervals.map(inv => inv.str).join('、');
+    }
+
+    function getFormattedBreakTimeSlots() {
+      const { intervals } = getValidRestIntervalsFromUI();
+      return intervals.map(inv => inv.str).join('、');
     }
 
     function parseDurationToMinutes(durationStr) {
-      const str = String(durationStr || ""); if (str.includes("錯誤") || str.includes("取消")) return 0;
-      let hours = 0, mins = 0; const hMatch = str.match(/(\d+)小時/), mMatch = str.match(/(\d+)分/);
-      if (hMatch) hours = parseInt(hMatch[1], 10); if (mMatch) mins = parseInt(mMatch[1], 10);
+      const str = String(durationStr || "");
+      if (str.includes("錯誤") || str.includes("取消")) return 0;
+      let hours = 0, mins = 0;
+      const hMatch = str.match(/(\d+)小時/);
+      const mMatch = str.match(/(\d+)分/);
+      if (hMatch) hours = parseInt(hMatch[1], 10);
+      if (mMatch) mins = parseInt(mMatch[1], 10);
       return hours * 60 + mins;
     }
 
     function updateCumulativeDuration() {
-      const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase(), companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase(), onboardDate = formatDate(document.getElementById('onboardDate').value), formCoachingDate = formatDate(document.getElementById('coachingDate').value), displayEl = document.getElementById('cumulativeDurationText');
-      if (!clientName || !companyName || !onboardDate) { displayEl.innerText = "累計總執行時間：---"; return; }
+      const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
+      const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
+      const onboardDate = formatDate(document.getElementById('onboardDate').value);
+      const formCoachingDate = formatDate(document.getElementById('coachingDate').value);
+      const displayEl = document.getElementById('cumulativeDurationText');
+      
+      if (!clientName || !companyName || !onboardDate) {
+        displayEl.innerText = "累計總執行時間：---";
+        return;
+      }
 
+      const currentKey = `${clientName}_${companyName}_${onboardDate}`;
       const dailyLatestMins = new Map();
+      
       allSchedules.forEach((item) => {
         if (isEditMode && item.id === currentEditRecordId) return; 
-        const cName = cleanAndToHalfWidth(item.clientName).toLowerCase(), compName = cleanAndToHalfWidth(item.companyName).toLowerCase(), oDate = formatDate(item.onboardDate), cDate = formatDate(item.coachingDate), coachingTimeStr = String(item.coachingTime || "");
-        if (cName === clientName && compName === companyName && oDate === onboardDate) {
+        const itemClient = cleanAndToHalfWidth(item.clientName).toLowerCase();
+        const itemComp = cleanAndToHalfWidth(item.companyName).toLowerCase();
+        const itemOnboard = formatDate(item.onboardDate);
+        const itemKey = `${itemClient}_${itemComp}_${itemOnboard}`;
+        
+        if (itemKey === currentKey) {
+          const cDate = formatDate(item.coachingDate);
+          const coachingTimeStr = String(item.coachingTime || ""); 
           if (!formCoachingDate || cDate <= formCoachingDate) {
-             if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
+             if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
+                 dailyLatestMins.set(cDate, parseDurationToMinutes(item.totalDuration));
+             }
           }
         }
       });
 
-      let historyMinutes = 0; dailyLatestMins.forEach(mins => historyMinutes += mins);
+      let historyMinutes = 0;
+      dailyLatestMins.forEach(mins => historyMinutes += mins);
+
       const currentDurationText = String(document.getElementById('totalDurationText').innerText);
       let currentMinutes = 0;
-      if (currentDurationText.includes('小時') && !currentDurationText.includes('錯誤')) currentMinutes = parseDurationToMinutes(currentDurationText.replace('本次執行時間：', ''));
-      const totalMins = historyMinutes + currentMinutes, hours = Math.floor(totalMins / 60), mins = totalMins % 60;
+      if (currentDurationText.includes('小時') && !currentDurationText.includes('錯誤')) {
+         const durStr = currentDurationText.replace('本次執行時間：', '');
+         currentMinutes = parseDurationToMinutes(durStr);
+      }
+
+      const totalMins = historyMinutes + currentMinutes;
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
       displayEl.innerText = `累計總執行時間：${hours}小時${mins.toString().padStart(2, '0')}分`;
     }
 
-    function calculateCumulativeForRecord(recordIndex, allData) {
-      const record = allData[recordIndex], rClient = cleanAndToHalfWidth(record.clientName).toLowerCase(), rComp = cleanAndToHalfWidth(record.companyName).toLowerCase(), rOnboard = formatDate(record.onboardDate), targetDateStr = formatDate(record.coachingDate), targetId = record.id; 
-      let totalMins = 0;
-      for (let i = 0; i < allData.length; i++) {
-         const item = allData[i], iClient = cleanAndToHalfWidth(item.clientName).toLowerCase(), iComp = cleanAndToHalfWidth(item.companyName).toLowerCase(), iOnboard = formatDate(item.onboardDate), coachingTimeStr = String(item.coachingTime || "");
-         if (iClient === rClient && iOnboard === rOnboard && iComp === rComp) {
-            const cDate = formatDate(item.coachingDate);
-            if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
-               if (cDate < targetDateStr || (cDate === targetDateStr && item.id <= targetId)) totalMins += parseDurationToMinutes(item.totalDuration);
-            }
-         }
-      }
-      return totalMins;
-    }
-
     function renderHistoryDropdown() {
-      const select = document.getElementById('historySelect'); select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
-      const uniqueMap = new Map(), isAdmin = currentUser && currentUser.role === 'admin';
+      const select = document.getElementById('historySelect');
+      select.innerHTML = '<option value="">-- 請選擇歷史服務使用者與事業單位 --</option>';
+      select.innerHTML += '<option value="NEW" style="font-weight:bold; color:var(--primary);">➕ 新增全新的訪視對象 (清空表單)</option>';
+
+      const uniqueMap = new Map();
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
       allSchedules.forEach(item => {
-        const coachingTimeStr = String(item.coachingTime || "");
-        if (coachingTimeStr !== '取消輔導' && !coachingTimeStr.includes('取消')) {
-            const key = `${cleanAndToHalfWidth(item.clientName)}_${formatDate(item.onboardDate)}_${cleanAndToHalfWidth(item.companyName)}`;
-            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+        const coachingTimeStr = String(item.coachingTime || ""); 
+        if (!coachingTimeStr.includes('取消')) {
+           const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
+           if (!uniqueMap.has(key)) uniqueMap.set(key, item);
         }
       });
+
       uniqueMap.forEach((item, key) => {
-        const opt = document.createElement('option'); opt.value = key;
+        const opt = document.createElement('option');
+        opt.value = key;
         const agentInfo = isAdmin ? ` (就服員: ${item.agentName})` : '';
         opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}${agentInfo}`;
         select.appendChild(opt);
@@ -722,31 +1096,80 @@
     }
 
     function applyHistoryPreset() {
-      const selectedKey = document.getElementById('historySelect').value; if (!selectedKey) return;
-      const matched = allSchedules.find(item => `${cleanAndToHalfWidth(item.clientName)}_${formatDate(item.onboardDate)}_${cleanAndToHalfWidth(item.companyName)}` === selectedKey);
+      const selectedKey = document.getElementById('historySelect').value;
+      if (!selectedKey) return;
+
+      if (selectedKey === 'NEW') {
+          CORE_FIELDS.forEach(id => { document.getElementById(id).value = ''; });
+          document.getElementById('coachingDate').value = '';
+          document.getElementById('remarks').value = '';
+          initTimeRows();
+          document.getElementById('breakTimeRowsContainer').innerHTML = ''; 
+          checkDateSequence();
+          triggerCalculateDuration();
+          if (currentFormMode === 'add') unlockCoreFields();
+          return;
+      }
+
+      const matched = allSchedules.find(item => 
+        !String(item.coachingTime || "").includes('取消') && 
+        `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey
+      );
+      
       if (matched) {
-        document.getElementById('clientName').value = matched.clientName; document.getElementById('onboardDate').value = formatDate(matched.onboardDate); document.getElementById('companyName').value = matched.companyName; document.getElementById('workAddress').value = matched.workAddress; document.getElementById('contactPerson').value = matched.contactPerson;
-        const phoneClean = String(matched.contactPhone || "").startsWith("'") ? String(matched.contactPhone).substring(1) : String(matched.contactPhone || "");
-        document.getElementById('contactPhone').value = phoneClean; document.getElementById('remarks').value = "";
+        document.getElementById('clientName').value = matched.clientName;
+        document.getElementById('onboardDate').value = formatDate(matched.onboardDate);
+        document.getElementById('companyName').value = matched.companyName;
+        document.getElementById('workAddress').value = matched.workAddress;
+        document.getElementById('contactPerson').value = matched.contactPerson;
         
-        document.getElementById('timeRowsContainer').innerHTML = '';
-        const coachingTimeStr = String(matched.coachingTime || "");
-        if (coachingTimeStr) coachingTimeStr.split('、').forEach(slot => { const parts = slot.split('-'); if (parts.length === 2) addTimeRow(parts[0], parts[1]); });
-        if (document.getElementById('timeRowsContainer').children.length === 0) initTimeRows();
+        const phoneClean = String(matched.contactPhone || "").startsWith("'") ? String(matched.contactPhone).substring(1) : String(matched.contactPhone || "");
+        document.getElementById('contactPhone').value = phoneClean;
+        document.getElementById('remarks').value = "";
 
-        document.getElementById('breakTimeRowsContainer').innerHTML = '';
+        const container = document.getElementById('timeRowsContainer');
+        container.innerHTML = '';
+        const coachingTimeStr = String(matched.coachingTime || ""); 
+        if (coachingTimeStr) {
+          const timeSlots = coachingTimeStr.split('、');
+          timeSlots.forEach(slot => {
+            const parts = slot.split('-');
+            if (parts.length === 2) addTimeRow(parts[0], parts[1]);
+          });
+        }
+        if (container.children.length === 0) initTimeRows();
+
+        const breakContainer = document.getElementById('breakTimeRowsContainer');
+        breakContainer.innerHTML = '';
         const breakTimeStr = String(matched.breakTime || "");
-        if (breakTimeStr) breakTimeStr.split('、').forEach(slot => { const parts = slot.split('-'); if (parts.length === 2) addBreakTimeRow(parts[0], parts[1]); });
+        if (breakTimeStr) {
+          const breakSlots = breakTimeStr.split('、');
+          breakSlots.forEach(slot => {
+            const parts = slot.split('-');
+            if (parts.length === 2) addBreakTimeRow(parts[0], parts[1]);
+          });
+        }
 
-        if (!isEditMode) { ['clientName', 'onboardDate', 'companyName'].forEach(id => { document.getElementById(id).readOnly = true; }); document.getElementById('unlockCoreBtn').classList.remove('hidden'); }
+        if (currentFormMode === 'add') {
+            CORE_FIELDS.forEach(id => {
+               document.getElementById(id).readOnly = true;
+            });
+            document.getElementById('unlockCoreBtn').classList.remove('hidden');
+        }
 
-        checkDateSequence(); updateCumulativeDuration(); calculateTotalDuration(); 
+        checkDateSequence(); 
+        triggerCalculateDuration(); 
       }
     }
 
     function onCompanyInput() {
-      const currentCompany = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase(); updateCumulativeDuration(); if (!currentCompany) return;
-      const matched = allSchedules.find(item => cleanAndToHalfWidth(item.companyName).toLowerCase() === currentCompany);
+      const currentCompany = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
+      updateCumulativeDuration(); 
+      if (!currentCompany) return;
+      const matched = allSchedules.find(item => 
+         item.companyName.toLowerCase() === currentCompany && 
+         !String(item.coachingTime || "").includes('取消') 
+      );
       if (matched) {
         if (!document.getElementById('workAddress').value) document.getElementById('workAddress').value = matched.workAddress;
         if (!document.getElementById('contactPerson').value) document.getElementById('contactPerson').value = matched.contactPerson;
@@ -755,42 +1178,121 @@
       }
     }
 
-    function populateFormFromRecord(originalIndex) {
-      const item = allSchedules[originalIndex]; if (!item) return;
-      const coachingTimeStr = String(item.coachingTime || ""), isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
-      if (isCanceled) return SysMsg.alert('此筆紀錄已註銷，無法再次編輯！');
+    async function populateFormFromRecord(originalIndex, isRestOnly = false) {
+      const item = allSchedules[originalIndex];
+      if (!item) return;
 
-      currentEditRecordId = item.id; setFormMode('edit');
-      document.getElementById('clientName').value = item.clientName; document.getElementById('onboardDate').value = formatDate(item.onboardDate); document.getElementById('coachingDate').value = formatDate(item.coachingDate); document.getElementById('companyName').value = item.companyName; document.getElementById('workAddress').value = item.workAddress; document.getElementById('contactPerson').value = item.contactPerson;
+      const coachingTimeStr = String(item.coachingTime || ""); 
+      const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
+      if (isCanceled) {
+        SysMsg.alert('此筆紀錄已註銷，無法進行修改與補登！');
+        return;
+      }
+
+      if (currentFormMode === 'add') {
+        const cName = document.getElementById('clientName').value.trim();
+        const comp = document.getElementById('companyName').value.trim();
+        const cDate = document.getElementById('coachingDate').value;
+        if (cName || comp || cDate) {
+          const result = await Swal.fire({
+            title: '⚠️ 確定要載入舊資料嗎？',
+            text: '您目前表單上還有尚未送出的新增資料，載入舊紀錄將會清空並覆蓋這些內容！',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--danger)',
+            cancelButtonColor: 'var(--secondary)',
+            confirmButtonText: '確定放棄並載入',
+            cancelButtonText: '取消'
+          });
+          if (!result.isConfirmed) return; 
+        }
+      }
+
+      currentEditRecordId = item.id; 
+      setFormMode(isRestOnly ? 'edit-rest' : 'edit');
+
+      document.getElementById('clientName').value = item.clientName;
+      document.getElementById('onboardDate').value = formatDate(item.onboardDate);
+      document.getElementById('coachingDate').value = formatDate(item.coachingDate);
+      document.getElementById('companyName').value = item.companyName;
+      document.getElementById('workAddress').value = item.workAddress;
+      document.getElementById('contactPerson').value = item.contactPerson;
+      
       const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
-      document.getElementById('contactPhone').value = phoneClean; document.getElementById('remarks').value = item.remarks || ""; document.getElementById('actionLog').value = item.actionLog || ""; document.getElementById('dateSequenceWarning').classList.add('hidden'); 
+      document.getElementById('contactPhone').value = phoneClean;
+      document.getElementById('remarks').value = item.remarks || "";
+      document.getElementById('actionLog').value = item.actionLog || ""; 
+      document.getElementById('dateSequenceWarning').classList.add('hidden'); 
 
-      document.getElementById('timeRowsContainer').innerHTML = '';
-      coachingTimeStr.split('、').forEach(slot => { const parts = slot.split('-'); if (parts.length === 2) addTimeRow(parts[0], parts[1]); });
-      if (document.getElementById('timeRowsContainer').children.length === 0) initTimeRows();
+      const container = document.getElementById('timeRowsContainer');
+      container.innerHTML = '';
+      if (!isCanceled) {
+        const timeSlots = coachingTimeStr.split('、'); 
+        timeSlots.forEach(slot => {
+          const parts = slot.split('-');
+          if (parts.length === 2) addTimeRow(parts[0], parts[1]);
+        });
+      }
+      if (container.children.length === 0) initTimeRows();
 
-      document.getElementById('breakTimeRowsContainer').innerHTML = '';
+      const breakContainer = document.getElementById('breakTimeRowsContainer');
+      breakContainer.innerHTML = '';
       const breakTimeStr = String(item.breakTime || "");
-      if (breakTimeStr) breakTimeStr.split('、').forEach(slot => { const parts = slot.split('-'); if (parts.length === 2) addBreakTimeRow(parts[0], parts[1]); });
+      if (!isCanceled && breakTimeStr) {
+        const breakSlots = breakTimeStr.split('、');
+        breakSlots.forEach(slot => {
+          const parts = slot.split('-');
+          if (parts.length === 2) addBreakTimeRow(parts[0], parts[1]);
+        });
+      }
 
-      updateCumulativeDuration(); window.scrollTo({ top: 0, behavior: 'smooth' });
+      triggerCalculateDuration(); 
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- 表單送出與列表渲染 ---
     async function submitSchedule(e, forcedSubmitType = null) {
       if (e) e.preventDefault();
-      if (!checkDateSequence()) return SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
+
+      if (!checkDateSequence()) {
+        SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
+        return;
+      }
       
-      const submitType = forcedSubmitType || (isEditMode ? 'edit' : 'new');
-      let totalDuration = "0小時0分", coachingTimeStr = "取消輔導";
+      let defaultSubmitType = 'new';
+      if (currentFormMode === 'edit') defaultSubmitType = 'edit';
+      if (currentFormMode === 'edit-rest') defaultSubmitType = 'edit-rest';
+
+      const submitType = forcedSubmitType || defaultSubmitType;
+      
+      let totalDuration = "0小時00分";
+      let coachingTimeStr = "取消輔導";
 
       if (submitType !== 'cancel') {
-        totalDuration = calculateTotalDuration();
-        if (totalDuration === "錯誤") return SysMsg.error('排程錯誤', '時段設定有錯誤或與其他行程重疊，請修正後再送出！');
+        totalDuration = triggerCalculateDuration();
+        if (totalDuration === "錯誤") {
+          SysMsg.error('排程錯誤', '時段設定有錯誤或與同一對象行程重疊，請修正後再送出！');
+          return;
+        }
+
+        if (currentOverlapState && submitType !== 'edit-rest') {
+          const confirmRes = await Swal.fire({
+            title: '⚠️ 偵測到行程重疊',
+            html: `系統發現您在此時段已有安排其他服務對象【<b class="text-danger">${escapeHtml(currentOverlapState.clientName)}</b>】。<br><br>請問這是一次「群組安置」（多人同梯次）嗎？`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--success)',
+            cancelButtonColor: 'var(--secondary)',
+            confirmButtonText: '確定是群組安置，送出！',
+            cancelButtonText: '返回修改時間'
+          });
+          if (!confirmRes.isConfirmed) return; 
+        }
         coachingTimeStr = getFormattedTimeSlots();
       }
 
-      const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = '處理中，請稍候...';
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = '處理中，請稍候...';
 
       const payload = {
         action: 'submitSchedule',
@@ -800,7 +1302,7 @@
         onboardDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('onboardDate').value)),
         coachingDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('coachingDate').value)),
         coachingTime: sanitizeInput(cleanAndToHalfWidth(coachingTimeStr)),
-        restTime: sanitizeInput(cleanAndToHalfWidth(restTimeStr)),
+        breakTime: getFormattedBreakTimeSlots(), 
         companyName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('companyName').value)),
         workAddress: sanitizeInput(cleanAndToHalfWidth(document.getElementById('workAddress').value)),
         contactPerson: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPerson').value)),
@@ -808,68 +1310,386 @@
         remarks: sanitizeInput(cleanAndToHalfWidth(document.getElementById('remarks').value, true)), 
         totalDuration: totalDuration,
         agentName: currentUser.name,
-        agentPhone: currentUser.phone
+        agentPhone: currentUser.phone,
+        silentSave: document.getElementById('silentSave').checked 
       };
 
       try {
+        if (sessionToken === 'FAKE_TOKEN_FOR_DEV') {
+            SysMsg.success('模擬儲存', '開發模式下已模擬資料送出。');
+            btn.disabled = false;
+            btn.innerText = (currentFormMode === 'edit-rest') ? '儲存補登 (不寄發信件)' : '儲存並送出通報通知';
+            return;
+        }
+
         const res = await fetchWithAuth(payload);
         if (res.status === 'success') {
           SysMsg.success('處理完成', res.message);
-          document.getElementById('scheduleForm').reset(); document.getElementById('historySelect').value = ''; document.getElementById('agentName').value = currentUser.name; document.getElementById('agentPhone').value = currentUser.phone;
-          initTimeRows(); setFormMode('add'); updateCumulativeDuration(); loadSchedules(); 
-        } else SysMsg.error('通報失敗', res.message);
-      } catch (err) { if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message); } finally { btn.disabled = false; btn.innerText = '儲存並送出通報通知'; }
+          document.getElementById('scheduleForm').reset();
+          document.getElementById('historySelect').value = '';
+          document.getElementById('agentName').value = currentUser.name;
+          document.getElementById('agentPhone').value = currentUser.phone;
+          initTimeRows();
+          document.getElementById('breakTimeRowsContainer').innerHTML = '';
+          setFormMode('add');
+          updateCumulativeDuration(); 
+          loadSchedules(); 
+        } else {
+          SysMsg.error('處理失敗', res.message);
+        }
+      } catch (err) {
+        if (err.message !== 'Unauthorized') SysMsg.error('系統錯誤', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = (currentFormMode === 'edit-rest') ? '儲存補登 (不寄發信件)' : '儲存並送出通報通知';
+      }
     }
 
     async function loadSchedules() {
-      const tbody = document.getElementById('dataTableBody'), isAdmin = currentUser && currentUser.role === 'admin', colCount = isAdmin ? 11 : 9; 
+      const tbody = document.getElementById('dataTableBody');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const colCount = isAdmin ? 11 : 9; 
+      
+      if (sessionToken === 'FAKE_TOKEN_FOR_DEV') return;
+
+      let res;
       try {
-        const res = await fetchWithAuth({ action: 'getSchedules' });
-        if (res.status === 'success') {
+        res = await fetchWithAuth({ action: 'getSchedules' });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: var(--danger); font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
+        return;
+      }
+
+      if (res.status === 'success') {
+        try {
           allSchedules = res.data;
-          allSchedules.sort((a, b) => { const dateA = new Date(a.coachingDate).getTime(), dateB = new Date(b.coachingDate).getTime(); if (dateB !== dateA) return dateB - dateA; return b.id - a.id; });
-          allSchedules.forEach((item, idx) => {
-            const cumulativeMins = calculateCumulativeForRecord(idx, allSchedules), cumHours = Math.floor(cumulativeMins / 60), cumMins = cumulativeMins % 60;
-            item.cumText = cumulativeMins > 0 ? `${cumHours}小時${cumMins.toString().padStart(2, '0')}分` : "0小時00分"; item.originalIndex = idx;
+          
+          allSchedules.sort((a, b) => {
+            const dateA = new Date(a.coachingDate).getTime();
+            const dateB = new Date(b.coachingDate).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return a.id - b.id; 
           });
-          renderHistoryDropdown(); filterData(); 
-        } else tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}</td></tr>`;
-      } catch (err) { tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`; }
+          
+          const userTotals = new Map();
+          allSchedules.forEach((item) => {
+            const itemKey = `${cleanAndToHalfWidth(item.clientName).toLowerCase()}_${cleanAndToHalfWidth(item.companyName).toLowerCase()}_${formatDate(item.onboardDate)}`;
+            const coachingTimeStr = String(item.coachingTime || "");
+            let currentMins = 0;
+
+            if (coachingTimeStr !== "取消輔導" && !coachingTimeStr.includes("取消")) {
+               currentMins = parseDurationToMinutes(item.totalDuration);
+            }
+
+            const prevTotal = userTotals.get(itemKey) || 0;
+            const newTotal = prevTotal + currentMins;
+            userTotals.set(itemKey, newTotal);
+
+            const cumHours = Math.floor(newTotal / 60);
+            const cumMins = newTotal % 60;
+            item.cumText = newTotal > 0 ? `${cumHours}小時${cumMins.toString().padStart(2, '0')}分` : "0小時00分";
+          });
+          
+          allSchedules.sort((a, b) => {
+            const dateA = new Date(a.coachingDate).getTime();
+            const dateB = new Date(b.coachingDate).getTime();
+            if (dateB !== dateA) return dateB - dateA;
+            return b.id - a.id; 
+          });
+
+          allSchedules.forEach((item, idx) => { item.originalIndex = idx; });
+          
+          renderHistoryDropdown();
+          filterData(); 
+
+          if (!sessionStorage.getItem('hasShownUpcoming')) {
+             showUpcomingSchedules(true);
+             sessionStorage.setItem('hasShownUpcoming', 'true');
+          }
+
+        } catch (renderErr) {
+          console.error("資料處理與渲染發生錯誤:", renderErr);
+          SysMsg.error('資料處理異常', '部分資料可能格式不符，請聯絡系統管理員。詳細錯誤：' + renderErr.message);
+        }
+      } else {
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: var(--danger); font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
+      }
     }
 
-    function renderTable(data) {
-      const thead = document.getElementById('dataTableHead'), tbody = document.getElementById('dataTableBody'), isAdmin = currentUser && currentUser.role === 'admin', colCount = isAdmin ? 11 : 9;
-      thead.innerHTML = `<tr><th>服務使用者</th><th>到職日</th><th>輔導日期/時段</th><th>本次時數</th><th>累計時數</th><th>複製時數</th><th>事業單位/地址</th><th>聯絡人/電話</th><th>備註</th>${isAdmin ? '<th>異動紀錄</th><th>就服員</th>' : ''}</tr>`;
-      if (data.length === 0) return tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無符合的通報紀錄</td></tr>`;
-
-      tbody.innerHTML = data.map((item) => {
-        const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || ""), coachingTimeStr = String(item.coachingTime || ""), isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
-        let adminCells = isAdmin ? `<td style="color:var(--text-muted); font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td><td>${escapeHtml(item.agentName)}</td>` : '';
-        return `<tr class="clickable-row" onclick="populateFormFromRecord(${item.originalIndex})" title="點擊載入此筆紀錄以修改"><td><strong>${escapeHtml(item.clientName)}</strong></td><td>${formatDate(item.onboardDate)}</td><td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'var(--danger)':'inherit'};">${escapeHtml(item.coachingTime)}</small></td><td><span style="color:var(--danger); font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td><td><span style="color:var(--info); font-weight:bold;">${item.cumText}</span></td><td onclick="event.stopPropagation();"><button type="button" class="btn-secondary" style="font-size:12px; padding:4px 8px; white-space: nowrap;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">複製</button></td><td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td><td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td><td><small>${escapeHtml(item.remarks || '-')}</small></td>${adminCells}</tr>`;
-      }).join('');
+    function showUpcomingSchedules(autoShow = false) {
+      if (!allSchedules || allSchedules.length === 0) return;
+      let prefDays = localStorage.getItem('upcomingDaysPref') || '3';
+      prefDays = parseInt(prefDays, 10);
+      renderUpcomingPopup(prefDays, autoShow);
     }
+
+    function renderUpcomingPopup(days, autoShow) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + days);
+
+      const upcoming = allSchedules.filter(item => {
+         const cTimeStr = String(item.coachingTime || "");
+         if (cTimeStr === '取消輔導' || cTimeStr.includes('取消')) return false;
+         const d = new Date(item.coachingDate);
+         d.setHours(0,0,0,0);
+         return d >= today && d <= targetDate;
+      });
+
+      upcoming.sort((a,b) => new Date(a.coachingDate) - new Date(b.coachingDate));
+
+      let html = `
+        <div style="text-align: right; margin-bottom: 10px;">
+          <label style="font-size: 13px; color: var(--text-muted); font-weight: bold;">顯示未來 
+            <select id="upcomingDaysSelect" onchange="window.updateUpcomingDays(this.value)" style="padding: 2px 5px; font-weight:bold; color:var(--primary);">
+              <option value="1" ${days===1?'selected':''}>1</option>
+              <option value="2" ${days===2?'selected':''}>2</option>
+              <option value="3" ${days===3?'selected':''}>3</option>
+            </select> 天內
+          </label>
+        </div>
+        <div id="upcomingListContainer" style="text-align: left; max-height: 320px; overflow-y: auto; padding-right: 5px;">
+      `;
+
+      if (upcoming.length === 0) {
+         html += `<div style="text-align:center; padding: 30px 10px; color:var(--text-muted); font-weight:bold;">近期無安排輔導行程 🎉</div>`;
+      } else {
+         upcoming.forEach(item => {
+           const d = new Date(item.coachingDate);
+           d.setHours(0,0,0,0);
+           const diffTime = d - today;
+           const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+           
+           let badge = '';
+           if (diffDays === 0) badge = '<span style="background:var(--danger); color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:5px; font-weight:normal;">今天</span>';
+           else if (diffDays === 1) badge = '<span style="background:var(--warning); color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:5px; font-weight:normal;">明天</span>';
+           else if (diffDays === 2) badge = '<span style="background:var(--success); color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:5px; font-weight:normal;">後天</span>';
+           else badge = `<span style="background:var(--info); color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:5px; font-weight:normal;">${diffDays}天後</span>`;
+
+           html += `
+             <div class="upcoming-card" onclick="populateFormFromRecord(${item.originalIndex}); Swal.close();" title="點擊直接載入這筆資料至表單">
+                <div style="margin-bottom: 4px;">${badge} <strong style="color:var(--primary);">${formatDate(item.coachingDate)}</strong> <span style="font-size:13px; color:var(--text-muted); margin-left:8px;">${escapeHtml(item.coachingTime)}</span></div>
+                <div style="font-size: 15px; font-weight: bold; margin-bottom: 4px; display:flex; align-items:center; gap:5px; color:var(--text);">👤 ${escapeHtml(item.clientName)} </div>
+                <div style="font-size: 13px; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🏢 ${escapeHtml(item.companyName)}</div>
+             </div>
+           `;
+         });
+      }
+      
+      html += `</div>`;
+      if (upcoming.length > 0) {
+          html += `<div style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:10px;">💡 提示：點擊行程卡片可直接帶入表單修改</div>`;
+      }
+
+      if (autoShow && upcoming.length === 0) return;
+
+      Swal.fire({
+        title: '🔔 近期輔導行程提醒',
+        html: html,
+        showConfirmButton: true,
+        confirmButtonText: '我知道了',
+        confirmButtonColor: 'var(--primary)',
+        width: '450px'
+      });
+    }
+
+    window.updateUpcomingDays = function(val) {
+       localStorage.setItem('upcomingDaysPref', val);
+       showUpcomingSchedules(false); 
+    };
 
     function filterData() {
       const keyword = String(document.getElementById('searchInput').value || "").toLowerCase().trim();
-      if (!keyword) return renderTable(allSchedules);
+      const dateFilter = document.getElementById('dateFilterSelect').value;
+      
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      
+      let startDate = new Date(-8640000000000000); 
+      let endDate = new Date(8640000000000000); 
+
+      if (dateFilter === '1m') {
+         startDate = new Date(now);
+         startDate.setMonth(now.getMonth() - 1);
+      } else if (dateFilter === 'last_m') {
+         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+      } else if (dateFilter === '3m') {
+         startDate = new Date(now);
+         startDate.setMonth(now.getMonth() - 3);
+      } else if (dateFilter === '6m') {
+         startDate = new Date(now);
+         startDate.setMonth(now.getMonth() - 6);
+      }
+
       const filtered = allSchedules.filter(item => {
+        let dateMatch = false;
+        if (dateFilter === 'all') {
+           dateMatch = true;
+        } else {
+           const itemDate = new Date(item.coachingDate);
+           itemDate.setHours(0,0,0,0);
+           if (isNaN(itemDate.getTime())) {
+               dateMatch = true; 
+           } else {
+               dateMatch = (itemDate >= startDate && itemDate <= endDate);
+           }
+        }
+
+        if (!dateMatch) return false;
+        if (!keyword) return true;
+        
         const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
-        return [item.clientName, item.companyName, item.workAddress, item.contactPerson, phoneClean, item.remarks, item.actionLog, item.agentName].some(val => String(val || '').toLowerCase().includes(keyword));
+        return (
+          String(item.clientName || '').toLowerCase().includes(keyword) ||
+          String(item.companyName || '').toLowerCase().includes(keyword) ||
+          String(item.workAddress || '').toLowerCase().includes(keyword) ||
+          String(item.contactPerson || '').toLowerCase().includes(keyword) ||
+          phoneClean.toLowerCase().includes(keyword) ||
+          String(item.remarks || '').toLowerCase().includes(keyword) ||
+          String(item.actionLog || '').toLowerCase().includes(keyword) ||
+          String(item.agentName || '').toLowerCase().includes(keyword)
+        );
       });
+      
       renderTable(filtered);
     }
 
-    function formatDate(dateStr) { if (!dateStr) return ''; const d = new Date(dateStr); return isNaN(d.getTime()) ? dateStr : d.toISOString().split('T')[0]; }
-    function escapeHtml(str) { return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function renderTable(data) {
+      const thead = document.getElementById('dataTableHead');
+      const tbody = document.getElementById('dataTableBody');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const colCount = isAdmin ? 11 : 9;
+
+      thead.innerHTML = `
+        <tr>
+          <th>操作</th>
+          <th>服務使用者</th>
+          <th>到職日</th>
+          <th>輔導日期/時段</th>
+          <th>本次時數</th>
+          <th>累計時數</th>
+          <th>事業單位/地址</th>
+          <th>聯絡人/電話</th>
+          <th>備註</th>
+          ${isAdmin ? '<th>異動紀錄</th><th>就服員</th>' : ''}
+        </tr>
+      `;
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無符合的通報紀錄</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map((item) => {
+        const phoneClean = String(item.contactPhone || "").startsWith("'") ? String(item.contactPhone).substring(1) : String(item.contactPhone || "");
+        const coachingTimeStr = String(item.coachingTime || ""); 
+        const breakTimeStr = String(item.breakTime || "");
+        const isCanceled = (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消'));
+        
+        let adminCells = isAdmin ? `
+          <td class="text-muted" style="font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>
+          <td>${escapeHtml(item.agentName)}</td>
+        ` : '';
+
+        let restHtml = "";
+        if (breakTimeStr && !isCanceled) {
+            restHtml = `<br><small class="text-muted">(休: ${escapeHtml(breakTimeStr)})</small>`;
+        }
+
+        let actionButtonsHtml = "";
+        if (!isCanceled) {
+          actionButtonsHtml = `
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <button type="button" class="btn-warning" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, false)" title="修改此筆紀錄並重新發送通報">📝 修改重送</button>
+              <button type="button" class="btn-add" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none; margin-top:0;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註">☕ 補登休息</button>
+              <button type="button" class="btn-secondary" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製時數</button>
+            </div>
+          `;
+        } else {
+          actionButtonsHtml = `<span class="text-danger" style="font-size:12px; font-weight:bold; display:inline-block; margin-top:8px;">🚫 已註銷</span>`;
+        }
+
+        return `
+        <tr>
+          <td style="vertical-align: middle; text-align: center;">
+            ${actionButtonsHtml}
+          </td>
+          <td><strong>${escapeHtml(item.clientName)}</strong></td>
+          <td>${formatDate(item.onboardDate)}</td>
+          <td>${formatDate(item.coachingDate)}<br><small class="${isCanceled?'text-danger':''}">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
+          <td><span class="text-danger" style="font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
+          <td><span class="text-info" style="color:var(--info); font-weight:bold;">${item.cumText}</span></td>
+          <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
+          <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
+          <td><small>${escapeHtml(item.remarks || '-')}</small></td>
+          ${adminCells}
+        </tr>
+      `}).join('');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toISOString().split('T')[0];
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
 
     function copyRecordText(e, originalIndex) {
-      e.stopPropagation(); const item = allSchedules[originalIndex]; if (!item) return;
-      if (item.coachingTime === '取消輔導' || item.coachingTime.includes('取消')) return SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
-      const formatDuration = (durStr) => { let h = 0, m = 0; const hMatch = String(durStr).match(/(\d+)小時/), mMatch = String(durStr).match(/(\d+)分/); if (hMatch) h = parseInt(hMatch[1], 10); if (mMatch) m = parseInt(mMatch[1], 10); return `${h}小時${m.toString().padStart(2, '0')}分`; };
-      const currentDurFormatted = formatDuration(item.totalDuration), cumDurFormatted = formatDuration(item.cumText);
-      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${item.coachingTime}），目前累積支持性輔導時數${cumDurFormatted}。`;
-      const textArea = document.createElement("textarea"); textArea.value = textToCopy; textArea.style.position = "fixed"; textArea.style.left = "-9999px"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
-      try { document.execCommand('copy') ? Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '📝 已成功複製輔導文字！', showConfirmButton: false, timer: 2000 }) : SysMsg.error('複製失敗', '無法自動複製，請手動複製。'); } catch (err) { SysMsg.error('複製失敗', '您的瀏覽器不支援自動複製功能。'); } document.body.removeChild(textArea);
+      e.stopPropagation(); 
+      const item = allSchedules[originalIndex];
+      if (!item) return;
+
+      const coachingTimeStr = String(item.coachingTime || ""); 
+      const breakTimeStr = String(item.breakTime || ""); 
+      if (coachingTimeStr === '取消輔導' || coachingTimeStr.includes('取消')) {
+        SysMsg.alert('此筆紀錄已註銷，無法複製輔導資訊！');
+        return;
+      }
+
+      const formatDuration = (durStr) => {
+        let h = 0, m = 0;
+        const hMatch = String(durStr).match(/(\d+)小時/);
+        const mMatch = String(durStr).match(/(\d+)分/);
+        if (hMatch) h = parseInt(hMatch[1], 10);
+        if (mMatch) m = parseInt(mMatch[1], 10);
+        return `${h}小時${m.toString().padStart(2, '0')}分`;
+      };
+
+      const currentDurFormatted = formatDuration(item.totalDuration);
+      const cumDurFormatted = formatDuration(item.cumText);
+
+      let restPart = "";
+      if (breakTimeStr) {
+          restPart = `，扣除休息時間：${breakTimeStr}`;
+      }
+
+      const textToCopy = `今日前往職場提供${currentDurFormatted}輔導（時間為：${coachingTimeStr}${restPart}），目前累積支持性輔導時數${cumDurFormatted}。`;
+
+      const textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '📝 已成功複製輔導文字！', showConfirmButton: false, timer: 2000 });
+        } else {
+          SysMsg.error('複製失敗', '無法自動複製，請手動複製。');
+        }
+      } catch (err) {
+        SysMsg.error('複製失敗', '您的瀏覽器不支援自動複製功能。');
+      }
+      document.body.removeChild(textArea);
     }
   </script>
 </body>
