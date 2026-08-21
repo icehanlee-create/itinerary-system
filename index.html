@@ -155,7 +155,7 @@
           <select id="historySelect" onchange="applyHistoryPreset()">
             <option value="">-- 請選擇歷史服務使用者與事業單位 --</option>
           </select>
-          <div class="hint">點選後可自動帶入使用者、事業單位與前次時段設定。</div>
+          <div class="hint">點選後可自動帶入使用者、事業單位等資訊。</div>
         </div>
 
         <form id="scheduleForm" onsubmit="submitSchedule(event)">
@@ -230,13 +230,13 @@
             <textarea id="actionLog" readonly style="background-color: var(--preset-bg); font-size: 13px; height: 80px;" placeholder="目前尚無修改紀錄"></textarea>
           </div>
 
-          <div class="grid">
+          <div class="grid hidden" id="agentFieldsContainer">
             <div class="form-group">
-              <label>就服員姓名</label>
+              <label>就服員姓名 (主管代填檢視用)</label>
               <input type="text" id="agentName" readonly>
             </div>
             <div class="form-group">
-              <label>就服員電話</label>
+              <label>就服員電話 (主管代填檢視用)</label>
               <input type="tel" id="agentPhone" readonly>
             </div>
           </div>
@@ -253,13 +253,14 @@
         </div>
 
         <div style="overflow-x: auto;">
-          <table>
-            <thead id="dataTableHead"></thead>
-            <tbody id="dataTableBody">
-              <tr><td colspan="10" style="text-align: center;">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <table>
+          <thead id="dataTableHead">
+          </thead>
+          <tbody id="dataTableBody">
+            <tr><td colspan="11" style="text-align: center;">載入中...</td></tr>
+          </tbody>
+        </table>
+      </div>
       </div>
     </div> 
   </div>
@@ -388,24 +389,78 @@
       const dateLockHint = document.getElementById('dateLockHint');
       const presetCard = document.getElementById('presetCard');
       const actionLogContainer = document.getElementById('actionLogContainer');
-      const unlockCoreBtn = document.getElementById('unlockCoreBtn');
-      const fieldsToLock = ['clientName', 'onboardDate', 'companyName'];
+      const addTimeBtn = document.getElementById('addTimeBtn');
+      const submitBtn = document.getElementById('submitBtn');
+      const unlockBtn = document.getElementById('unlockCoreBtn');
       
-      isEditMode = (mode === 'edit');
-      if (isEditMode) {
-        badge.innerText = '【修改重發模式】'; badge.className = 'badge-mode edit';
-        switchBtn.classList.remove('hidden'); cancelBtn.classList.remove('hidden');
-        if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden'); else actionLogContainer.classList.add('hidden'); 
-        document.getElementById('formCard').style.backgroundColor = 'var(--danger-light)'; 
-        presetCard.classList.add('hidden'); coachingDateInput.readOnly = true; dateLockHint.classList.remove('hidden'); unlockCoreBtn.classList.add('hidden');
-        fieldsToLock.forEach(id => { document.getElementById(id).readOnly = true; });
+      currentFormMode = mode;
+      isEditMode = (mode === 'edit' || mode === 'edit-rest');
+
+      if (mode === 'edit') {
+        badge.innerText = '【修改重發模式】';
+        badge.className = 'badge-mode edit';
+        switchBtn.classList.remove('hidden');
+        cancelBtn.classList.remove('hidden');
+        if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
+        else actionLogContainer.classList.add('hidden');
+        document.getElementById('formCard').style.backgroundColor = '#ffe5e5'; 
+        presetCard.classList.add('hidden');
+        coachingDateInput.readOnly = true;
+        dateLockHint.classList.remove('hidden');
+        unlockBtn.classList.add('hidden');
+        
+        CORE_FIELDS.forEach(id => { 
+            if(id === 'clientName' || id === 'onboardDate' || id === 'companyName') {
+               document.getElementById(id).readOnly = true; 
+               document.getElementById(id).style.backgroundColor = '#e9ecef';
+            } else {
+               document.getElementById(id).readOnly = false; 
+               document.getElementById(id).style.backgroundColor = '';
+            }
+        });
+        addTimeBtn.classList.remove('hidden');
+        submitBtn.innerText = '儲存並送出通報通知';
+
+      } else if (mode === 'edit-rest') {
+        badge.innerText = '【補登休息模式】';
+        badge.className = 'badge-mode edit-rest'; 
+        switchBtn.classList.remove('hidden');
+        cancelBtn.classList.add('hidden');
+        if (currentUser && currentUser.role === 'admin') actionLogContainer.classList.remove('hidden');
+        else actionLogContainer.classList.add('hidden');
+        document.getElementById('formCard').style.backgroundColor = '#e8f4ff'; 
+        presetCard.classList.add('hidden');
+        coachingDateInput.readOnly = true;
+        dateLockHint.classList.remove('hidden');
+        unlockBtn.classList.add('hidden');
+        
+        CORE_FIELDS.forEach(id => { 
+           document.getElementById(id).readOnly = true; 
+           document.getElementById(id).style.backgroundColor = '#e9ecef';
+        });
+        addTimeBtn.classList.add('hidden');
+        submitBtn.innerText = '儲存補登 (不寄發信件)';
+
       } else {
-        badge.innerText = '【新增模式】'; badge.className = 'badge-mode';
-        switchBtn.classList.add('hidden'); cancelBtn.classList.add('hidden'); actionLogContainer.classList.add('hidden'); 
-        if(document.getElementById('formCard')) document.getElementById('formCard').style.backgroundColor = 'var(--card)';
-        presetCard.classList.remove('hidden'); coachingDateInput.readOnly = false; dateLockHint.classList.add('hidden'); unlockCoreBtn.classList.add('hidden');
-        currentEditRecordId = null; document.getElementById('actionLog').value = ''; 
-        fieldsToLock.forEach(id => { document.getElementById(id).readOnly = false; });
+        badge.innerText = '【新增模式】';
+        badge.className = 'badge-mode';
+        switchBtn.classList.add('hidden');
+        cancelBtn.classList.add('hidden');
+        actionLogContainer.classList.add('hidden'); 
+        document.getElementById('formCard') ? document.getElementById('formCard').style.backgroundColor = 'white' : null;
+        presetCard.classList.remove('hidden');
+        coachingDateInput.readOnly = false;
+        dateLockHint.classList.add('hidden');
+        unlockBtn.classList.add('hidden');
+        currentEditRecordId = null; 
+        document.getElementById('actionLog').value = ''; 
+        
+        CORE_FIELDS.forEach(id => { 
+           document.getElementById(id).readOnly = false; 
+           document.getElementById(id).style.backgroundColor = '';
+        });
+        addTimeBtn.classList.remove('hidden');
+        submitBtn.innerText = '儲存並送出通報通知';
       }
     }
 
@@ -738,11 +793,22 @@
       const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = '處理中，請稍候...';
 
       const payload = {
-        action: 'submitSchedule', submitType: submitType, recordId: currentEditRecordId, 
-        clientName: cleanAndToHalfWidth(document.getElementById('clientName').value), onboardDate: cleanAndToHalfWidth(document.getElementById('onboardDate').value), coachingDate: cleanAndToHalfWidth(document.getElementById('coachingDate').value),
-        coachingTime: cleanAndToHalfWidth(coachingTimeStr), breakTime: getFormattedBreakTimeSlots(),
-        companyName: cleanAndToHalfWidth(document.getElementById('companyName').value), workAddress: cleanAndToHalfWidth(document.getElementById('workAddress').value), contactPerson: cleanAndToHalfWidth(document.getElementById('contactPerson').value), contactPhone: cleanAndToHalfWidth(document.getElementById('contactPhone').value),
-        remarks: sanitizeInput(document.getElementById('remarks').value), totalDuration: totalDuration, agentName: currentUser.name, agentPhone: currentUser.phone
+        action: 'submitSchedule',
+        submitType: submitType,
+        recordId: currentEditRecordId, 
+        clientName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('clientName').value)),
+        onboardDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('onboardDate').value)),
+        coachingDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('coachingDate').value)),
+        coachingTime: sanitizeInput(cleanAndToHalfWidth(coachingTimeStr)),
+        restTime: sanitizeInput(cleanAndToHalfWidth(restTimeStr)),
+        companyName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('companyName').value)),
+        workAddress: sanitizeInput(cleanAndToHalfWidth(document.getElementById('workAddress').value)),
+        contactPerson: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPerson').value)),
+        contactPhone: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPhone').value)),
+        remarks: sanitizeInput(cleanAndToHalfWidth(document.getElementById('remarks').value, true)), 
+        totalDuration: totalDuration,
+        agentName: currentUser.name,
+        agentPhone: currentUser.phone
       };
 
       try {
