@@ -90,8 +90,8 @@
   <div class="container">
     
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v2.0.0)</h2>
-      <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：2026 年 10 月 09 日</div>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(<span id="appVersionText">v2.1.0</span>)</h2>
+      <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：<span id="appUpdatedText">2026 年 10 月 09 日</span></div>
       
       <div class="form-group">
         <label>帳號</label>
@@ -120,6 +120,7 @@
             <span class="hint">電話: <span id="currentPhoneSpan"></span></span>
           </div>
           <div>
+            <button onclick="showReleaseNotes()" class="btn-info" style="margin-right: 10px; background-color: #6f42c1;">📢 更新說明</button>
             <button onclick="showUpcomingSchedules()" class="btn-warning" style="margin-right: 10px; background-color: #ffc107; color:#000;">🔔 近期行程</button>
             <button onclick="openAccountSettings()" class="btn-info" style="margin-right: 10px;">⚙️ 帳號設定</button>
             <button onclick="logout()" class="btn-secondary">登出系統</button>
@@ -262,6 +263,20 @@
 
   <script>
     // ⚠️ 記得替換成你的最新 GAS Web App URL
+    // ==================== 版本與改版公告（v2.1.0） ====================
+    // 每次改版只要修改這一區：版本號、更新日期、公告內容。
+    // 使用者在同一個瀏覽器看過某版本的公告後，就不會再自動跳出，直到版本號改變。
+    const APP_VERSION = "v2.1.0";
+    const APP_UPDATED = "2026 年 10 月 09 日";
+    const RELEASE_NOTES = [
+      { title: "新增「開案日期」欄位", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。舊個案不用補填。" },
+      { title: "重新開案提醒", text: "帶入超過 3 個月沒有輔導的個案時，系統會詢問是否為重新開案。" },
+      { title: "安全性強化", text: "閒置 20 分鐘自動登出；新密碼至少 8 碼且需含英文與數字；登入連續錯誤 5 次會暫時鎖定 15 分鐘。" },
+      { title: "更新說明按鈕", text: "關閉本公告後，可隨時點上方「📢 更新說明」再次查看。" }
+    ];
+    const RELEASE_SEEN_KEY = "releaseNotesSeenVersion";
+    // ===================================================================
+
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyJBpokUNZC4sjOb91S3IBxkJXZjucJ0qRuESGoUhyHBXhzFkbQyXZ3y5g_exBMeqW3Kg/exec"; 
     
     let currentUser = null;
@@ -1516,6 +1531,9 @@
           renderHistoryDropdown();
           filterData(); 
 
+          // v2.1.0：先顯示改版公告（若尚未看過），關閉後才跳近期行程
+          await maybeShowReleaseNotes();
+          if (!currentUser) return; // 公告開著時被自動登出
           if (!sessionStorage.getItem('hasShownUpcoming')) {
              showUpcomingSchedules(true);
              sessionStorage.setItem('hasShownUpcoming', 'true');
@@ -1529,6 +1547,39 @@
       } else {
         tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${escapeHtml(res.message)}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
       }
+    }
+
+    // v2.1.0：改版公告
+    function hasSeenReleaseNotes() {
+      try { return localStorage.getItem(RELEASE_SEEN_KEY) === APP_VERSION; } catch (e) { return false; }
+    }
+    function markReleaseNotesSeen() {
+      try { localStorage.setItem(RELEASE_SEEN_KEY, APP_VERSION); } catch (e) { /* 無痕模式等無法儲存時略過 */ }
+    }
+
+    function showReleaseNotes() {
+      const items = RELEASE_NOTES.map((n, i) => `
+        <div style="display:flex; gap:10px; padding:10px 0; border-bottom:1px dashed #e0d7f5;">
+          <div style="flex-shrink:0; width:24px; height:24px; border-radius:50%; background:#6f42c1; color:#fff; font-size:13px; font-weight:bold; display:flex; align-items:center; justify-content:center;">${i + 1}</div>
+          <div>
+            <div style="font-weight:bold; color:#4a2a8a; font-size:15px; margin-bottom:3px;">${escapeHtml(n.title)}</div>
+            <div style="font-size:14px; color:#444; line-height:1.6;">${escapeHtml(n.text)}</div>
+          </div>
+        </div>`).join('');
+
+      return Swal.fire({
+        title: `📢 系統更新說明 ${escapeHtml(APP_VERSION)}`,
+        html: `<div style="font-size:12px; color:#888; margin-bottom:6px;">更新日期：${escapeHtml(APP_UPDATED)}</div>
+               <div style="text-align:left; max-height:360px; overflow-y:auto; padding-right:4px;">${items}</div>`,
+        confirmButtonText: '我知道了',
+        confirmButtonColor: '#6f42c1',
+        allowOutsideClick: false,
+        width: '480px'
+      }).then(() => markReleaseNotesSeen());
+    }
+
+    async function maybeShowReleaseNotes() {
+      if (!hasSeenReleaseNotes()) await showReleaseNotes();
     }
 
     function showUpcomingSchedules(autoShow = false) {
@@ -1762,6 +1813,10 @@
       return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                               .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
+
+    // v2.1.0：畫面上的版本號與更新日期統一由上方常數帶入
+    document.getElementById('appVersionText').innerText = APP_VERSION;
+    document.getElementById('appUpdatedText').innerText = APP_UPDATED;
 
     function copyRecordText(e, originalIndex) {
       e.stopPropagation(); 
