@@ -7,8 +7,11 @@
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍀</text></svg>">
   
-  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+  <!-- v1.2.0：加上 SRI 驗證，CDN 檔案若遭竄改，瀏覽器會拒絕載入 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet"
+        integrity="sha384-ww0rVASXMoKHk188bKXg4fIZUrd5s80drZJWVP6tgTtu4AskG/wVqDnOEmhjJhvp" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"
+          integrity="sha384-/Wx1NuqlgALfa1Do1U6Mer7quEDHOo8REf/0izoIrV8Y3Z/gtEHQc01STCEMM1LZ" crossorigin="anonymous"></script>
 
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; transition: background-color 0.3s ease; }
@@ -87,7 +90,8 @@
   <div class="container">
     
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v1.1.1)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v1.2.1)</h2>
+      <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：2026 年 10 月 09 日</div>
       
       <div class="form-group">
         <label>帳號</label>
@@ -100,10 +104,10 @@
       <button onclick="login()" id="loginBtn" style="width: 100%; margin-top: 10px;">登入</button>
     
       <div class="quick-links-container">
-        <a href="https://pwdsvr.wda.gov.tw/" target="_blank" class="capsule-link link-blue">勞委系統(紀錄)</a>
-        <a href="https://www.fd-enableap.taipei/enableap/" target="_blank" class="capsule-link link-green">基金系統(月報)</a>
-        <a href="https://vrs2.wda.gov.tw/eVRS" target="_blank" class="capsule-link link-orange">專業人員系統(繼續教育)</a>
-        <a href="https://icehanlee-create.github.io/InfoShare/" target="_blank" class="capsule-link link-yellow">雙北徵才活動(職缺)</a>       
+        <a href="https://pwdsvr.wda.gov.tw/" target="_blank" rel="noopener noreferrer" class="capsule-link link-blue">勞委系統(紀錄)</a>
+        <a href="https://www.fd-enableap.taipei/enableap/" target="_blank" rel="noopener noreferrer" class="capsule-link link-green">基金系統(月報)</a>
+        <a href="https://vrs2.wda.gov.tw/eVRS" target="_blank" rel="noopener noreferrer" class="capsule-link link-orange">專業人員系統(繼續教育)</a>
+        <a href="https://icehanlee-create.github.io/InfoShare/" target="_blank" rel="noopener noreferrer" class="capsule-link link-yellow">雙北徵才活動(職缺)</a>       
       </div>
     </div>
 
@@ -282,10 +286,62 @@
       }).replace(/\u3000/g, " ").trim();
     }
 
-    function sanitizeInput(str) {
-      if (!str) return "";
-      return str.toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // v1.2.0：取代舊的 sanitizeInput。資料改存「原文」，顯示時才用 escapeHtml 消毒。
+    // 這裡只做「試算表公式注入」防護：開頭為 = + - @ 或 Tab/換行的內容，前面加 ' 讓試算表當成純文字。
+    function guardFormula(str) {
+      const s = String(str || "");
+      return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
     }
+
+    // v1.2.0：讀回資料時的正規化。去掉公式防護用的 ' 前綴，並還原舊版存入的 &lt; &gt;
+    const TEXT_FIELDS = ['clientName', 'companyName', 'workAddress', 'contactPerson', 'contactPhone', 'remarks', 'coachingTime', 'restTime', 'agentName', 'actionLog'];
+    function normalizeRecord(item) {
+      TEXT_FIELDS.forEach(f => {
+        if (item[f] === undefined || item[f] === null) return;
+        let s = String(item[f]);
+        if (s.startsWith("'")) s = s.substring(1);
+        item[f] = s.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      });
+      return item;
+    }
+
+    // v1.2.0：密碼強度規則（後端也必須檢查同樣規則）
+    function checkPasswordStrength(pwd) {
+      if (pwd.length < 8) return '新密碼至少需要 8 個字元！';
+      if (!/[A-Za-z]/.test(pwd) || !/\d/.test(pwd)) return '新密碼需同時包含英文字母與數字！';
+      return null;
+    }
+
+    // v1.2.0：閒置自動登出（20 分鐘無操作；剩 2 分鐘時提醒）
+    const IDLE_LIMIT_MS = 20 * 60 * 1000;
+    const IDLE_WARN_MS = 18 * 60 * 1000;
+    let idleWarnTimer = null, idleLogoutTimer = null, lastActivityReset = 0;
+
+    function resetIdleTimer() {
+      if (!currentUser) return;
+      const now = Date.now();
+      if (now - lastActivityReset < 1000) return; // 節流，避免滑鼠移動時頻繁重設
+      lastActivityReset = now;
+      clearTimeout(idleWarnTimer);
+      clearTimeout(idleLogoutTimer);
+      idleWarnTimer = setTimeout(() => {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: '⏳ 閒置過久，2 分鐘後將自動登出', showConfirmButton: false, timer: 8000 });
+      }, IDLE_WARN_MS);
+      idleLogoutTimer = setTimeout(async () => {
+        await logout(true);
+        Swal.fire({ title: '已自動登出', text: '為保護個案資料，閒置超過 20 分鐘已自動登出，請重新登入。', icon: 'info', confirmButtonColor: '#0056b3' });
+      }, IDLE_LIMIT_MS);
+    }
+
+    function stopIdleTimer() {
+      clearTimeout(idleWarnTimer);
+      clearTimeout(idleLogoutTimer);
+      lastActivityReset = 0;
+    }
+
+    ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+      document.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
 
     async function login() {
       const username = document.getElementById('loginUsername').value.trim();
@@ -327,7 +383,8 @@
           document.getElementById('mainSection').classList.remove('hidden');
 
           initTimeRows();
-          loadSchedules(); 
+          resetIdleTimer();
+          loadSchedules();
         } else {
           SysMsg.error('登入失敗', res.message);
         }
@@ -360,8 +417,20 @@
       if (!force && currentUser && sessionToken) {
         await fetchWithAuth({ action: 'logout' }).catch(() => {});
       }
+      stopIdleTimer();
       currentUser = null;
       sessionToken = null;
+
+      // v1.2.0：登出時一併清空畫面與記憶體中的個資，避免殘留
+      allSchedules = [];
+      currentEditRecordId = null;
+      document.getElementById('scheduleForm').reset();
+      document.getElementById('historySelect').innerHTML = '';
+      document.getElementById('dataTableBody').innerHTML = '';
+      document.getElementById('searchInput').value = '';
+      setFormMode('add');
+      if (Swal.isVisible()) Swal.close();
+
       document.getElementById('mainSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
@@ -374,15 +443,15 @@
         html:
           '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:#0056b3;">📝 聯絡資訊</div>' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">聯絡電話：</div>' +
-          `<input id="swal-input-phone" type="tel" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" value="${currentUser.phone || ''}" placeholder="請輸入聯絡電話">` +
+          `<input id="swal-input-phone" type="tel" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" value="${escapeHtml(currentUser.phone)}" placeholder="請輸入聯絡電話">` +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">電子郵件 (Email)：</div>' +
-          `<input id="swal-input-email" type="email" class="swal2-input" style="margin-top:0; margin-bottom:20px; width:100%; box-sizing:border-box;" value="${currentUser.email || ''}" placeholder="請輸入電子郵件信箱">` +
+          `<input id="swal-input-email" type="email" class="swal2-input" style="margin-top:0; margin-bottom:20px; width:100%; box-sizing:border-box;" value="${escapeHtml(currentUser.email)}" placeholder="請輸入電子郵件信箱">` +
           '<hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">' +
           '<div style="text-align:left; font-size:14px; margin-bottom:5px; font-weight:bold; color:#d9534f;">🔑 變更密碼 <span style="font-size:12px; font-weight:normal; color:#666;">(若不修改請留空)</span></div>' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">舊密碼：</div>' +
           '<input id="swal-input-old" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" placeholder="請輸入目前的密碼">' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">新密碼：</div>' +
-          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" placeholder="請設定新密碼">' +
+          '<input id="swal-input-new" type="password" class="swal2-input" style="margin-top:0; margin-bottom:10px; width:100%; box-sizing:border-box;" placeholder="至少 8 碼，需含英文與數字">' +
           '<div style="text-align:left; font-size:13px; margin-bottom:2px;">確認新密碼：</div>' +
           '<input id="swal-input-confirm" type="password" class="swal2-input" style="margin-top:0; width:100%; box-sizing:border-box;" placeholder="請再次輸入新密碼">',
         focusConfirm: false,
@@ -402,6 +471,8 @@
             if (!oldPwd || !newPwd || !confirmPwd) { Swal.showValidationMessage('請完整填寫密碼欄位！'); return false; }
             if (newPwd !== confirmPwd) { Swal.showValidationMessage('新密碼與確認密碼不一致！'); return false; }
             if (oldPwd === newPwd) { Swal.showValidationMessage('新密碼不能與舊密碼相同！'); return false; }
+            const pwdErr = checkPasswordStrength(newPwd);
+            if (pwdErr) { Swal.showValidationMessage(pwdErr); return false; }
           }
           return { newPhone, newEmail, oldPwd, newPwd };
         }
@@ -1145,7 +1216,7 @@
 
       if (!currentCompany) return;
       const matched = allSchedules.find(item => 
-         item.companyName.toLowerCase() === currentCompany && 
+         cleanAndToHalfWidth(item.companyName).toLowerCase() === currentCompany && 
          !String(item.coachingTime || "").includes('取消') 
       );
       if (matched) {
@@ -1285,19 +1356,19 @@
         action: 'submitSchedule',
         submitType: submitType,
         recordId: currentEditRecordId, 
-        clientName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('clientName').value)),
-        onboardDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('onboardDate').value)),
-        coachingDate: sanitizeInput(cleanAndToHalfWidth(document.getElementById('coachingDate').value)),
-        coachingTime: sanitizeInput(cleanAndToHalfWidth(coachingTimeStr)),
-        restTime: sanitizeInput(cleanAndToHalfWidth(restTimeStr)),
-        companyName: sanitizeInput(cleanAndToHalfWidth(document.getElementById('companyName').value)),
-        workAddress: sanitizeInput(cleanAndToHalfWidth(document.getElementById('workAddress').value)),
-        contactPerson: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPerson').value)),
-        contactPhone: sanitizeInput(cleanAndToHalfWidth(document.getElementById('contactPhone').value)),
-        remarks: sanitizeInput(cleanAndToHalfWidth(document.getElementById('remarks').value, true)), 
+        clientName: guardFormula(cleanAndToHalfWidth(document.getElementById('clientName').value)),
+        onboardDate: cleanAndToHalfWidth(document.getElementById('onboardDate').value),
+        coachingDate: cleanAndToHalfWidth(document.getElementById('coachingDate').value),
+        coachingTime: guardFormula(cleanAndToHalfWidth(coachingTimeStr)),
+        restTime: guardFormula(cleanAndToHalfWidth(restTimeStr)),
+        companyName: guardFormula(cleanAndToHalfWidth(document.getElementById('companyName').value)),
+        workAddress: guardFormula(cleanAndToHalfWidth(document.getElementById('workAddress').value)),
+        contactPerson: guardFormula(cleanAndToHalfWidth(document.getElementById('contactPerson').value)),
+        contactPhone: guardFormula(cleanAndToHalfWidth(document.getElementById('contactPhone').value)),
+        remarks: guardFormula(cleanAndToHalfWidth(document.getElementById('remarks').value, true)), 
         totalDuration: totalDuration,
-        agentName: currentUser.name,
-        agentPhone: currentUser.phone
+        agentName: guardFormula(currentUser.name),
+        agentPhone: guardFormula(currentUser.phone)
       };
 
       try {
@@ -1336,13 +1407,13 @@
         // 這裡「只」攔截與後端 GAS 之間的網路連線異常
         res = await fetchWithAuth({ action: 'getSchedules' });
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${err.message}</small></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">系統連線異常，無法載入紀錄。<br><small>${escapeHtml(err.message)}</small></td></tr>`;
         return;
       }
 
       if (res.status === 'success') {
         try {
-          allSchedules = res.data;
+          allSchedules = (res.data || []).map(normalizeRecord);
           
           // 步驟 1：為了正確加總累計時數，先把資料「由舊到新」排序
           allSchedules.sort((a, b) => {
@@ -1399,7 +1470,7 @@
           SysMsg.error('資料處理異常', '部分資料可能格式不符，請聯絡系統管理員。詳細錯誤：' + renderErr.message);
         }
       } else {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${res.message}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red; font-weight: bold;">讀取失敗：${escapeHtml(res.message)}<br><small>(可能未發布新版部署，請確認後端設定)</small></td></tr>`;
       }
     }
 
@@ -1459,7 +1530,7 @@
 
            html += `
              <div class="upcoming-card" onclick="populateFormFromRecord(${item.originalIndex}); Swal.close();" title="點擊直接載入這筆資料至表單">
-                <div style="margin-bottom: 4px;">${badge} <strong style="color:#0056b3;">${formatDate(item.coachingDate)}</strong> <span style="font-size:13px; color:#555; margin-left:8px;">${escapeHtml(item.coachingTime)}</span></div>
+                <div style="margin-bottom: 4px;">${badge} <strong style="color:#0056b3;">${escapeHtml(formatDate(item.coachingDate))}</strong> <span style="font-size:13px; color:#555; margin-left:8px;">${escapeHtml(item.coachingTime)}</span></div>
                 <div style="font-size: 15px; font-weight: bold; margin-bottom: 4px; display:flex; align-items:center; gap:5px;">👤 ${escapeHtml(item.clientName)} </div>
                 <div style="font-size: 13px; color: #444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🏢 ${escapeHtml(item.companyName)}</div>
              </div>
@@ -1608,10 +1679,10 @@
             ${actionButtonsHtml}
           </td>
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
-          <td>${formatDate(item.onboardDate)}</td>
-          <td>${formatDate(item.coachingDate)}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
+          <td>${escapeHtml(formatDate(item.onboardDate))}</td>
+          <td>${escapeHtml(formatDate(item.coachingDate))}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
-          <td><span style="color:#17a2b8; font-weight:bold;">${item.cumText}</span></td>
+          <td><span style="color:#17a2b8; font-weight:bold;">${escapeHtml(item.cumText)}</span></td>
           <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
@@ -1628,7 +1699,9 @@
     }
 
     function escapeHtml(str) {
-      return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      // v1.2.0：補上雙引號與單引號的跳脫，避免屬性值被提早關閉
+      return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                              .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
     function copyRecordText(e, originalIndex) {
