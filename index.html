@@ -90,7 +90,7 @@
   <div class="container">
     
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v1.2.1)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(v2.0.0)</h2>
       <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：2026 年 10 月 09 日</div>
       
       <div class="form-group">
@@ -151,6 +151,10 @@
               <input type="text" id="clientName" required placeholder="例如：王大明" oninput="updateCumulativeDuration(); triggerCalculateDuration();">
             </div>
             <div class="form-group">
+              <label>開案日期 <span class="hint" style="display:inline;">(重新開案請填新的開案日，累計時數會重新計算)</span></label>
+              <input type="date" id="openDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
+            </div>
+            <div class="form-group">
               <label>到職日期</label>
               <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
             </div>
@@ -178,6 +182,7 @@
                 <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden" style="display:inline; color:#dc3545;">(修改模式不可更改)</span></label>
                 <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration(); triggerCalculateDuration();">
                 <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
+                <div id="openDateWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於開案日期！</div>
               </div>
               <div class="form-group">
                 <label>⏰ 預計職場輔導時段 <span class="hint">(下拉選單模式)</span></label>
@@ -246,7 +251,7 @@
             <thead id="dataTableHead">
             </thead>
             <tbody id="dataTableBody">
-              <tr><td colspan="11" style="text-align: center;">載入中...</td></tr>
+              <tr><td colspan="12" style="text-align: center;">載入中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -267,7 +272,23 @@
     let currentOverlapState = null; 
     let currentFormMode = 'add'; 
 
-    const CORE_FIELDS = ['clientName', 'onboardDate', 'companyName', 'workAddress', 'contactPerson', 'contactPhone'];
+    const CORE_FIELDS = ['clientName', 'openDate', 'onboardDate', 'companyName', 'workAddress', 'contactPerson', 'contactPhone'];
+    const LOCKED_IN_EDIT = ['clientName', 'openDate', 'onboardDate', 'companyName'];
+    const REOPEN_HINT_MONTHS = 3; // v2.0.0：距離上次輔導超過幾個月，帶入時詢問是否重新開案
+
+    // v2.0.0：舊資料沒有開案日，一律視為「開案日 = 到職日」
+    function getOpenDate(item) {
+      return formatDate(item.openDate) || formatDate(item.onboardDate);
+    }
+
+    // v2.0.0：「同一案」的判斷 = 姓名 + 事業單位 + 到職日 + 開案日
+    function makeCaseKey(client, company, onboard, open) {
+      return [cleanAndToHalfWidth(client).toLowerCase(), cleanAndToHalfWidth(company).toLowerCase(),
+              formatDate(onboard), formatDate(open)].join('_');
+    }
+    function caseKeyOf(item) {
+      return makeCaseKey(item.clientName, item.companyName, item.onboardDate, getOpenDate(item));
+    }
 
     const SysMsg = {
       alert: (text) => Swal.fire({ title: '系統提示', text: text, icon: 'warning', confirmButtonColor: '#0056b3' }),
@@ -533,7 +554,7 @@
         unlockBtn.classList.add('hidden');
         
         CORE_FIELDS.forEach(id => { 
-            if(id === 'clientName' || id === 'onboardDate' || id === 'companyName') {
+            if(LOCKED_IN_EDIT.includes(id)) {
                document.getElementById(id).readOnly = true; 
                document.getElementById(id).style.backgroundColor = '#e9ecef';
             } else {
@@ -604,6 +625,7 @@
           document.getElementById('agentName').value = currentUser.name;
           document.getElementById('agentPhone').value = currentUser.phone;
           document.getElementById('dateSequenceWarning').classList.add('hidden');
+          document.getElementById('openDateWarning').classList.add('hidden');
           initTimeRows();
           setFormMode('add');
           updateCumulativeDuration(); 
@@ -644,17 +666,17 @@
 
     function checkDateSequence() {
       const onboardDateVal = document.getElementById('onboardDate').value;
+      const openDateVal = document.getElementById('openDate').value;
       const coachingDateVal = document.getElementById('coachingDate').value;
       const warningEl = document.getElementById('dateSequenceWarning');
+      const openWarningEl = document.getElementById('openDateWarning');
 
-      if (onboardDateVal && coachingDateVal) {
-        if (new Date(coachingDateVal) < new Date(onboardDateVal)) {
-          warningEl.classList.remove('hidden');
-          return false;
-        }
-      }
-      warningEl.classList.add('hidden');
-      return true;
+      // v2.0.0：輔導日不可早於到職日，也不可早於開案日（開案日與到職日之間不限先後）
+      const badOnboard = !!(onboardDateVal && coachingDateVal && coachingDateVal < onboardDateVal);
+      const badOpen = !!(openDateVal && coachingDateVal && coachingDateVal < openDateVal);
+      warningEl.classList.toggle('hidden', !badOnboard);
+      openWarningEl.classList.toggle('hidden', !badOpen);
+      return !badOnboard && !badOpen;
     }
 
     function initTimeRows() {
@@ -1069,24 +1091,22 @@
       const clientName = cleanAndToHalfWidth(document.getElementById('clientName').value).toLowerCase();
       const companyName = cleanAndToHalfWidth(document.getElementById('companyName').value).toLowerCase();
       const onboardDate = formatDate(document.getElementById('onboardDate').value);
+      const openDate = formatDate(document.getElementById('openDate').value);
       const formCoachingDate = formatDate(document.getElementById('coachingDate').value);
       const displayEl = document.getElementById('cumulativeDurationText');
       
-      if (!clientName || !companyName || !onboardDate) {
+      if (!clientName || !companyName || !onboardDate || !openDate) {
         displayEl.innerText = "累計總執行時間：---";
         return;
       }
 
-      const currentKey = `${clientName}_${companyName}_${onboardDate}`;
+      const currentKey = makeCaseKey(clientName, companyName, onboardDate, openDate);
       let historyMinutes = 0;
       
       allSchedules.forEach((item) => {
         if (isEditMode && item.id === currentEditRecordId) return; 
         
-        const itemClient = cleanAndToHalfWidth(item.clientName).toLowerCase();
-        const itemComp = cleanAndToHalfWidth(item.companyName).toLowerCase();
-        const itemOnboard = formatDate(item.onboardDate);
-        const itemKey = `${itemClient}_${itemComp}_${itemOnboard}`;
+        const itemKey = caseKeyOf(item);
         
         if (itemKey === currentKey) {
           const cDate = formatDate(item.coachingDate);
@@ -1124,7 +1144,7 @@
       allSchedules.forEach(item => {
         const coachingTimeStr = String(item.coachingTime || ""); 
         if (!coachingTimeStr.includes('取消')) {
-           const key = `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}`;
+           const key = caseKeyOf(item);
            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
         }
       });
@@ -1133,7 +1153,7 @@
         const opt = document.createElement('option');
         opt.value = key;
         const agentInfo = isAdmin ? ` (就服員: ${item.agentName})` : '';
-        opt.innerText = `👤 ${item.clientName} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}${agentInfo}`;
+        opt.innerText = `👤 ${item.clientName} | 開案:${getOpenDate(item)} | 到職:${formatDate(item.onboardDate)} | 🏢 ${item.companyName}${agentInfo}`;
         select.appendChild(opt);
       });
     }
@@ -1158,12 +1178,13 @@
 
       const matched = allSchedules.find(item => 
         !String(item.coachingTime || "").includes('取消') && 
-        `${item.clientName}_${formatDate(item.onboardDate)}_${item.companyName}` === selectedKey
+        caseKeyOf(item) === selectedKey
       );
       
       if (matched) {
         document.getElementById('clientName').value = matched.clientName;
         document.getElementById('onboardDate').value = formatDate(matched.onboardDate);
+        document.getElementById('openDate').value = getOpenDate(matched);
         document.getElementById('companyName').value = matched.companyName;
         document.getElementById('workAddress').value = matched.workAddress;
         document.getElementById('contactPerson').value = matched.contactPerson;
@@ -1207,6 +1228,39 @@
 
         checkDateSequence(); 
         triggerCalculateDuration(); 
+        askIfReopen(matched);
+      }
+    }
+
+    // v2.0.0：距離該案最後一次輔導超過 REOPEN_HINT_MONTHS 個月，詢問是否為重新開案
+    async function askIfReopen(matched) {
+      const lastDate = new Date(formatDate(matched.coachingDate));
+      if (isNaN(lastDate.getTime())) return;
+      const threshold = new Date();
+      threshold.setHours(0, 0, 0, 0);
+      threshold.setMonth(threshold.getMonth() - REOPEN_HINT_MONTHS);
+      if (lastDate >= threshold) return;
+
+      const result = await Swal.fire({
+        title: '這是重新開案嗎？',
+        html: `【${escapeHtml(matched.clientName)}】上一次輔導是 <b>${escapeHtml(formatDate(matched.coachingDate))}</b>，已超過 ${REOPEN_HINT_MONTHS} 個月。<br><br>若已結案後重新開案，請填寫新的開案日期，累計時數會重新計算。`,
+        icon: 'question',
+        showDenyButton: true,
+        confirmButtonText: '同一次服務',
+        denyButtonText: '重新開案',
+        confirmButtonColor: '#0056b3',
+        denyButtonColor: '#28a745',
+        allowOutsideClick: false
+      });
+      if (result.isDenied) {
+        const openEl = document.getElementById('openDate');
+        openEl.value = '';
+        openEl.readOnly = false;
+        openEl.style.backgroundColor = '#fff8e1';
+        checkDateSequence();
+        updateCumulativeDuration();
+        openEl.focus();
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: '請填寫新的開案日期', showConfirmButton: false, timer: 2500 });
       }
     }
 
@@ -1262,6 +1316,7 @@
 
       document.getElementById('clientName').value = item.clientName;
       document.getElementById('onboardDate').value = formatDate(item.onboardDate);
+      document.getElementById('openDate').value = getOpenDate(item);
       document.getElementById('coachingDate').value = formatDate(item.coachingDate);
       document.getElementById('companyName').value = item.companyName;
       document.getElementById('workAddress').value = item.workAddress;
@@ -1273,6 +1328,7 @@
       document.getElementById('remarks').value = item.remarks || "";
       document.getElementById('actionLog').value = item.actionLog || ""; 
       document.getElementById('dateSequenceWarning').classList.add('hidden'); 
+      document.getElementById('openDateWarning').classList.add('hidden');
 
       const container = document.getElementById('timeRowsContainer');
       container.innerHTML = '';
@@ -1307,7 +1363,7 @@
       if (e) e.preventDefault();
 
       if (!checkDateSequence()) {
-        SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期，請修正後再送出！');
+        SysMsg.error('日期錯誤', '預計職場輔導日期不可早於到職日期或開案日期，請修正後再送出！');
         return;
       }
       
@@ -1358,6 +1414,7 @@
         recordId: currentEditRecordId, 
         clientName: guardFormula(cleanAndToHalfWidth(document.getElementById('clientName').value)),
         onboardDate: cleanAndToHalfWidth(document.getElementById('onboardDate').value),
+        openDate: cleanAndToHalfWidth(document.getElementById('openDate').value),
         coachingDate: cleanAndToHalfWidth(document.getElementById('coachingDate').value),
         coachingTime: guardFormula(cleanAndToHalfWidth(coachingTimeStr)),
         restTime: guardFormula(cleanAndToHalfWidth(restTimeStr)),
@@ -1400,7 +1457,7 @@
     async function loadSchedules() {
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 11 : 9; 
+      const colCount = isAdmin ? 12 : 10; 
       
       let res;
       try {
@@ -1426,7 +1483,7 @@
           // 步驟 2：使用 O(N) 字典演算法，順著跑一次就能精準算出每個人的累計時數 (秒殺卡頓)
           const userTotals = new Map();
           allSchedules.forEach((item) => {
-            const itemKey = `${cleanAndToHalfWidth(item.clientName).toLowerCase()}_${cleanAndToHalfWidth(item.companyName).toLowerCase()}_${formatDate(item.onboardDate)}`;
+            const itemKey = caseKeyOf(item);
             const coachingTimeStr = String(item.coachingTime || "");
             let currentMins = 0;
 
@@ -1622,12 +1679,13 @@
       const thead = document.getElementById('dataTableHead');
       const tbody = document.getElementById('dataTableBody');
       const isAdmin = currentUser && currentUser.role === 'admin';
-      const colCount = isAdmin ? 11 : 9;
+      const colCount = isAdmin ? 12 : 10;
 
       thead.innerHTML = `
         <tr>
           <th>操作</th>
           <th>服務使用者</th>
+          <th>開案日</th>
           <th>到職日</th>
           <th>輔導日期/時段</th>
           <th>本次時數</th>
@@ -1679,6 +1737,7 @@
             ${actionButtonsHtml}
           </td>
           <td><strong>${escapeHtml(item.clientName)}</strong></td>
+          <td>${escapeHtml(getOpenDate(item))}</td>
           <td>${escapeHtml(formatDate(item.onboardDate))}</td>
           <td>${escapeHtml(formatDate(item.coachingDate))}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
