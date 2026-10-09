@@ -90,7 +90,7 @@
   <div class="container">
     
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(<span id="appVersionText">v2.1.0</span>)</h2>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(<span id="appVersionText">v2.1.2</span>)</h2>
       <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：<span id="appUpdatedText">2026 年 10 月 09 日</span></div>
       
       <div class="form-group">
@@ -153,11 +153,11 @@
             </div>
             <div class="form-group">
               <label>開案日期 <span class="hint" style="display:inline;">(重新開案請填新的開案日，累計時數會重新計算)</span></label>
-              <input type="date" id="openDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
+              <input type="date" id="openDate" min="2020-01-01" max="2099-12-31" required onchange="checkDateSequence(); updateCumulativeDuration();">
             </div>
             <div class="form-group">
               <label>到職日期</label>
-              <input type="date" id="onboardDate" required onchange="checkDateSequence(); updateCumulativeDuration();">
+              <input type="date" id="onboardDate" min="2020-01-01" max="2099-12-31" required onchange="checkDateSequence(); updateCumulativeDuration();">
             </div>
             <div class="form-group">
               <label>事業單位名稱</label>
@@ -181,7 +181,7 @@
             <div class="grid">
               <div class="form-group">
                 <label>📅 預計職場輔導日期 <span id="dateLockHint" class="hint hidden" style="display:inline; color:#dc3545;">(修改模式不可更改)</span></label>
-                <input type="date" id="coachingDate" required onchange="checkDateSequence(); updateCumulativeDuration(); triggerCalculateDuration();">
+                <input type="date" id="coachingDate" min="2020-01-01" max="2099-12-31" required onchange="checkDateSequence(); updateCumulativeDuration(); triggerCalculateDuration();">
                 <div id="dateSequenceWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於到職日期！</div>
                 <div id="openDateWarning" class="error-text hidden">⚠️ 警告：預計輔導日期早於開案日期！</div>
               </div>
@@ -266,12 +266,13 @@
     // ==================== 版本與改版公告（v2.1.0） ====================
     // 每次改版只要修改這一區：版本號、更新日期、公告內容。
     // 使用者在同一個瀏覽器看過某版本的公告後，就不會再自動跳出，直到版本號改變。
-    const APP_VERSION = "v2.1.0";
+    const APP_VERSION = "v2.1.2";
     const APP_UPDATED = "2026 年 10 月 09 日";
     const RELEASE_NOTES = [
       { title: "新增「開案日期」欄位", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。舊個案不用補填。" },
       { title: "重新開案提醒", text: "帶入超過 3 個月沒有輔導的個案時，系統會詢問是否為重新開案。" },
       { title: "安全性強化", text: "閒置 20 分鐘自動登出；新密碼至少 8 碼且需含英文與數字；登入連續錯誤 5 次會暫時鎖定 15 分鐘。" },
+      { title: "日期輸入更方便", text: "日期欄位的年份限制為 4 碼，可選範圍從 2020 年起；預計輔導日期最晚只能選到一年後，避免年份打錯。" },
       { title: "更新說明按鈕", text: "關閉本公告後，可隨時點上方「📢 更新說明」再次查看。" }
     ];
     const RELEASE_SEEN_KEY = "releaseNotesSeenVersion";
@@ -419,6 +420,7 @@
           document.getElementById('mainSection').classList.remove('hidden');
 
           initTimeRows();
+          setCoachingDateMax();
           resetIdleTimer();
           loadSchedules();
         } else {
@@ -1813,6 +1815,15 @@
       return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                               .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
+
+    // v2.1.2：預計輔導日期的上限 = 今天 + 1 年（以本機時間計算，避免時區造成差一天）
+    function setCoachingDateMax() {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('coachingDate').max = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    setCoachingDateMax();
 
     // v2.1.0：畫面上的版本號與更新日期統一由上方常數帶入
     document.getElementById('appVersionText').innerText = APP_VERSION;
