@@ -53,7 +53,38 @@
     table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; vertical-align: middle; }
     th { background-color: #f2f2f2; }
+    tbody tr { background-color: #fff; }
     tbody tr:hover { background-color: #f9f9f9; }
+
+    /* v2.2.0：凍結左側兩欄（操作、服務使用者） */
+    .freeze-toggle { background-color: #fff; color: #0056b3; border: 1px solid #0056b3; font-size: 14px; padding: 7px 12px; width: auto; flex-shrink: 0; white-space: nowrap; }
+    .freeze-toggle.active { background-color: #0056b3; color: #fff; }
+    /* 合併框線模式下，固定欄的框線不會跟著固定，會透出底下內容，所以凍結時改用分離框線 */
+    .table-wrap.freeze-cols table { border-collapse: separate; border-spacing: 0; }
+    .table-wrap.freeze-cols th, .table-wrap.freeze-cols td { border-width: 0 1px 1px 0; }
+    .table-wrap.freeze-cols tr > :first-child { border-left-width: 1px; }
+    .table-wrap.freeze-cols thead th { border-top-width: 1px; }
+    .table-wrap.freeze-cols th:nth-child(1), .table-wrap.freeze-cols td:nth-child(1),
+    .table-wrap.freeze-cols th:nth-child(2), .table-wrap.freeze-cols td:nth-child(2) { position: sticky; z-index: 2; background-color: inherit; }
+    .table-wrap.freeze-cols th:nth-child(1), .table-wrap.freeze-cols th:nth-child(2) { z-index: 3; background-color: #f2f2f2; }
+    .table-wrap.freeze-cols th:nth-child(1), .table-wrap.freeze-cols td:nth-child(1) { left: 0; }
+    .table-wrap.freeze-cols th:nth-child(2), .table-wrap.freeze-cols td:nth-child(2) { left: var(--freeze-col1, 0px); box-shadow: 4px 0 6px -3px rgba(0,0,0,0.25); }
+    .table-wrap.freeze-cols td[colspan] { position: static; box-shadow: none; }
+
+    /* v2.2.0：手機凍結時縮小操作按鈕（圖示在上、文字在下，兩行） */
+    .act-btn .act-icon { margin-right: 2px; }
+    @media (max-width: 768px) {
+      .table-wrap.freeze-cols th:nth-child(1), .table-wrap.freeze-cols td:nth-child(1),
+      .table-wrap.freeze-cols th:nth-child(2), .table-wrap.freeze-cols td:nth-child(2) { padding: 6px; }
+      .table-wrap.freeze-cols td:nth-child(2) { font-size: 13px; max-width: 4.5em; word-break: break-all; }
+      .table-wrap.freeze-cols .act-group { gap: 4px !important; }
+      .table-wrap.freeze-cols .act-btn { display: flex; flex-direction: column; align-items: center; font-size: 11px !important; line-height: 1.2; padding: 3px 4px !important; min-width: 46px; }
+      .table-wrap.freeze-cols .act-btn .act-icon { margin: 0; font-size: 13px; }
+    }
+
+    /* v2.2.0：主管介面地址連結 */
+    .addr-link { color: #0056b3; text-decoration: none; border-bottom: 1px dashed #0056b3; }
+    .addr-link:hover { color: #003d80; border-bottom-style: solid; }
     .search-box { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
     .hint { font-size: 12px; color: #666; margin-top: 5px; }
     
@@ -90,8 +121,8 @@
   <div class="container">
     
     <div id="loginSection" class="card">
-      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(<span id="appVersionText">v2.1.2</span>)</h2>
-      <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：<span id="appUpdatedText">2026 年 10 月 09 日</span></div>
+      <h2 style="display: block; text-align: center; line-height: 1.4; margin-bottom: 20px;">北市康職重<br>支持性輔導通報系統<br>(<span id="appVersionText">v2.2.0</span>)</h2>
+      <div style="text-align: center; font-size: 12px; color: #888; margin: -12px 0 18px;">最後更新：<span id="appUpdatedText">2026 年 10 月 13 日</span></div>
       
       <div class="form-group">
         <label>帳號</label>
@@ -245,9 +276,10 @@
             <option value="all">📅 顯示全部</option>
           </select>
           <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)" style="flex: 1; min-width: 200px;">
+          <button type="button" id="freezeToggleBtn" class="freeze-toggle" onclick="toggleFreezeCols()" title="往右滑動表格時，固定顯示「操作」與「服務使用者」兩欄">📌 凍結左側兩欄</button>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div id="tableWrap" class="table-wrap" style="overflow-x: auto;">
           <table>
             <thead id="dataTableHead">
             </thead>
@@ -266,14 +298,13 @@
     // ==================== 版本與改版公告（v2.1.0） ====================
     // 每次改版只要修改這一區：版本號、更新日期、公告內容。
     // 使用者在同一個瀏覽器看過某版本的公告後，就不會再自動跳出，直到版本號改變。
-    const APP_VERSION = "v2.1.2";
-    const APP_UPDATED = "2026 年 10 月 09 日";
+    const APP_VERSION = "v2.2.0";
+    const APP_UPDATED = "2026 年 10 月 13 日";
     const RELEASE_NOTES = [
-      { title: "新增「開案日期」欄位", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。舊個案不用補填。" },
-      { title: "重新開案提醒", text: "帶入超過 3 個月沒有輔導的個案時，系統會詢問是否為重新開案。" },
-      { title: "安全性強化", text: "閒置 20 分鐘自動登出；新密碼至少 8 碼且需含英文與數字；登入連續錯誤 5 次會暫時鎖定 15 分鐘。" },
-      { title: "日期輸入更方便", text: "日期欄位的年份限制為 4 碼，可選範圍從 2020 年起；預計輔導日期最晚只能選到一年後，避免年份打錯。" },
-      { title: "更新說明按鈕", text: "關閉本公告後，可隨時點上方「📢 更新說明」再次查看。" }
+      { title: "歷史紀錄可凍結左側兩欄", text: "點搜尋框旁的「📌 凍結左側兩欄」，往右滑動表格時，「操作」與「服務使用者」會固定在左邊方便對照；再點一次即可取消。系統會記住你的選擇。" },
+      { title: "手機版操作按鈕更精簡", text: "手機上凍結時，操作按鈕改為圖示在上、文字在下的小按鈕，右側可以看到更多資料。" },
+      { title: "主管：地址一鍵開地圖", text: "主管在歷史紀錄表格或近期行程中，點工作地址即可開啟 Google 地圖（手機會直接開啟地圖 App）。" },
+      { title: "提醒：重新開案請填新的開案日期", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。" }
     ];
     const RELEASE_SEEN_KEY = "releaseNotesSeenVersion";
     // ===================================================================
@@ -1609,6 +1640,7 @@
       });
 
       upcoming.sort((a,b) => new Date(a.coachingDate) - new Date(b.coachingDate));
+      const isAdminUser = currentUser && currentUser.role === 'admin';
 
       let html = `
         <div style="text-align: right; margin-bottom: 10px;">
@@ -1643,6 +1675,7 @@
                 <div style="margin-bottom: 4px;">${badge} <strong style="color:#0056b3;">${escapeHtml(formatDate(item.coachingDate))}</strong> <span style="font-size:13px; color:#555; margin-left:8px;">${escapeHtml(item.coachingTime)}</span></div>
                 <div style="font-size: 15px; font-weight: bold; margin-bottom: 4px; display:flex; align-items:center; gap:5px;">👤 ${escapeHtml(item.clientName)} </div>
                 <div style="font-size: 13px; color: #444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🏢 ${escapeHtml(item.companyName)}</div>
+                ${isAdminUser && String(item.workAddress || '').trim() ? `<div style="font-size: 13px; margin-top: 3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${addressHtml(item.workAddress, true)}</div>` : ''}
              </div>
            `;
          });
@@ -1752,6 +1785,7 @@
 
       if (data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">目前尚無符合的通報紀錄</td></tr>`;
+        updateFreezeOffset();
         return;
       }
 
@@ -1774,10 +1808,10 @@
         let actionButtonsHtml = "";
         if (!isCanceled) {
           actionButtonsHtml = `
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <button type="button" class="btn-warning" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, false)" title="修改此筆紀錄並重新發送通報">📝 修改重送</button>
-              <button type="button" class="btn-info" style="font-size:12px; padding:5px 8px; white-space: nowrap; background-color:#20c997; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註">☕ 補登休息</button>
-              <button type="button" class="btn-secondary" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊">📋 複製時數</button>
+            <div class="act-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <button type="button" class="btn-warning act-btn" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, false)" title="修改此筆紀錄並重新發送通報"><span class="act-icon">📝</span><span>修改重送</span></button>
+              <button type="button" class="btn-info act-btn" style="font-size:12px; padding:5px 8px; white-space: nowrap; background-color:#20c997; border:none;" onclick="populateFormFromRecord(${item.originalIndex}, true)" title="僅修改休息時間與備註"><span class="act-icon">☕</span><span>補登休息</span></button>
+              <button type="button" class="btn-secondary act-btn" style="font-size:12px; padding:5px 8px; white-space: nowrap; border:none;" onclick="copyRecordText(event, ${item.originalIndex})" title="複製此筆輔導時數資訊"><span class="act-icon">📋</span><span>複製時數</span></button>
             </div>
           `;
         } else {
@@ -1795,12 +1829,13 @@
           <td>${escapeHtml(formatDate(item.coachingDate))}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
           <td><span style="color:#d9534f; font-weight:bold;">${escapeHtml(item.totalDuration)}</span></td>
           <td><span style="color:#17a2b8; font-weight:bold;">${escapeHtml(item.cumText)}</span></td>
-          <td>${escapeHtml(item.companyName)}<br><small>${escapeHtml(item.workAddress)}</small></td>
+          <td>${escapeHtml(item.companyName)}<br><small>${addressHtml(item.workAddress, isAdmin)}</small></td>
           <td>${escapeHtml(item.contactPerson)}<br><small>${escapeHtml(phoneClean)}</small></td>
           <td><small>${escapeHtml(item.remarks || '-')}</small></td>
           ${adminCells}
         </tr>
       `}).join('');
+      updateFreezeOffset();
     }
 
     function formatDate(dateStr) {
@@ -1814,6 +1849,45 @@
       // v1.2.0：補上雙引號與單引號的跳脫，避免屬性值被提早關閉
       return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                               .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // v2.2.0：凍結左側兩欄（預設開啟，選擇記在各自的瀏覽器）
+    const FREEZE_KEY = "historyFreezeCols";
+    let freezeFallback = null; // 瀏覽器無法儲存設定時（如無痕模式），僅本次有效
+    function isFreezeOn() {
+      if (freezeFallback !== null) return freezeFallback;
+      try { return localStorage.getItem(FREEZE_KEY) !== 'off'; } catch (e) { return true; }
+    }
+    function applyFreezeState() {
+      const on = isFreezeOn();
+      document.getElementById('tableWrap').classList.toggle('freeze-cols', on);
+      const btn = document.getElementById('freezeToggleBtn');
+      btn.classList.toggle('active', on);
+      btn.innerText = on ? '📌 已凍結左側兩欄' : '📌 凍結左側兩欄';
+      updateFreezeOffset();
+    }
+    function toggleFreezeCols() {
+      const next = !isFreezeOn();
+      freezeFallback = next;
+      try { localStorage.setItem(FREEZE_KEY, next ? 'on' : 'off'); } catch (e) { /* 略過 */ }
+      applyFreezeState();
+    }
+    // 第二欄要貼在第一欄右邊，所以要量出第一欄的實際寬度
+    function updateFreezeOffset() {
+      const firstTh = document.querySelector('#dataTableHead th');
+      const w = firstTh ? firstTh.getBoundingClientRect().width : 0;
+      document.getElementById('tableWrap').style.setProperty('--freeze-col1', w + 'px');
+    }
+    window.addEventListener('resize', updateFreezeOffset);
+    applyFreezeState();
+
+    // v2.2.0：主管點地址開啟 Google 地圖（歷史紀錄表格、近期行程共用）
+    // 手機上會直接開啟 Google 地圖 App；stopPropagation 避免觸發外層卡片的點擊事件
+    function addressHtml(address, isAdmin) {
+      const text = String(address || '');
+      if (!isAdmin || !text.trim()) return escapeHtml(text);
+      const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(text.trim());
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="addr-link" title="在 Google 地圖開啟此地址" onclick="event.stopPropagation();">📍 ${escapeHtml(text)}</a>`;
     }
 
     // v2.1.2：預計輔導日期的上限 = 今天 + 1 年（以本機時間計算，避免時區造成差一天）
