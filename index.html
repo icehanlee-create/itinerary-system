@@ -58,7 +58,8 @@
 
     /* v2.2.0：凍結左側兩欄（操作、服務使用者） */
     .freeze-toggle { background-color: #fff; color: #0056b3; border: 1px solid #0056b3; font-size: 14px; padding: 7px 12px; width: auto; flex-shrink: 0; white-space: nowrap; }
-    .freeze-toggle.active { background-color: #0056b3; color: #fff; }
+    .freeze-toggle:hover { background-color: #e7f1ff; color: #0056b3; }
+    .freeze-toggle.active, .freeze-toggle.active:hover { background-color: #0056b3; color: #fff; }
     /* 合併框線模式下，固定欄的框線不會跟著固定，會透出底下內容，所以凍結時改用分離框線 */
     .table-wrap.freeze-cols table { border-collapse: separate; border-spacing: 0; }
     .table-wrap.freeze-cols th, .table-wrap.freeze-cols td { border-width: 0 1px 1px 0; }
@@ -76,10 +77,16 @@
     @media (max-width: 768px) {
       .table-wrap.freeze-cols th:nth-child(1), .table-wrap.freeze-cols td:nth-child(1),
       .table-wrap.freeze-cols th:nth-child(2), .table-wrap.freeze-cols td:nth-child(2) { padding: 6px; }
-      .table-wrap.freeze-cols td:nth-child(2) { font-size: 13px; max-width: 4.5em; word-break: break-all; }
-      .table-wrap.freeze-cols .act-group { gap: 4px !important; }
-      .table-wrap.freeze-cols .act-btn { display: flex; flex-direction: column; align-items: center; font-size: 11px !important; line-height: 1.2; padding: 3px 4px !important; min-width: 46px; }
-      .table-wrap.freeze-cols .act-btn .act-icon { margin: 0; font-size: 13px; }
+      /* v2.2.0：手機上「服務使用者」「就服員」欄縮成一個字寬，文字直排 */
+      .col-narrow { padding: 6px 4px !important; text-align: center; }
+      .col-narrow .narrow-text { display: block; width: 1em; margin: 0 auto; word-break: break-all; line-height: 1.25; }
+      /* 手機上不論是否凍結，操作按鈕都使用精簡樣式 */
+      .table-wrap td:nth-child(1) { padding: 6px; }
+      .table-wrap .act-group { gap: 4px !important; }
+      .table-wrap .act-btn { display: flex; flex-direction: column; align-items: center; font-size: 11px !important; line-height: 1.2; padding: 3px 4px !important; min-width: 46px; }
+      .table-wrap .act-btn .act-icon { margin: 0; font-size: 13px; }
+      /* 名字超過 3 個字時縮小字體 */
+      .col-narrow .narrow-text.long-name { font-size: 11px; }
     }
 
     /* v2.2.0：主管介面地址連結 */
@@ -302,7 +309,7 @@
     const APP_UPDATED = "2026 年 10 月 13 日";
     const RELEASE_NOTES = [
       { title: "歷史紀錄可凍結左側兩欄", text: "點搜尋框旁的「📌 凍結左側兩欄」，往右滑動表格時，「操作」與「服務使用者」會固定在左邊方便對照；再點一次即可取消。系統會記住你的選擇。" },
-      { title: "手機版操作按鈕更精簡", text: "手機上凍結時，操作按鈕改為圖示在上、文字在下的小按鈕，右側可以看到更多資料。" },
+      { title: "手機版表格更精簡", text: "手機上的操作按鈕改為圖示在上、文字在下的小按鈕；「服務使用者」「就服員」欄縮成一個字寬直排顯示（名字超過 3 個字會自動縮小），右側可以看到更多資料。" },
       { title: "主管：地址一鍵開地圖", text: "主管在歷史紀錄表格或近期行程中，點工作地址即可開啟 Google 地圖（手機會直接開啟地圖 App）。" },
       { title: "提醒：重新開案請填新的開案日期", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。" }
     ];
@@ -1770,7 +1777,7 @@
       thead.innerHTML = `
         <tr>
           <th>操作</th>
-          <th>服務使用者</th>
+          <th class="col-narrow"><span class="narrow-text">服務使用者</span></th>
           <th>開案日</th>
           <th>到職日</th>
           <th>輔導日期/時段</th>
@@ -1779,7 +1786,7 @@
           <th>事業單位/地址</th>
           <th>聯絡人/電話</th>
           <th>備註</th>
-          ${isAdmin ? '<th>異動紀錄</th><th>就服員</th>' : ''}
+          ${isAdmin ? '<th>異動紀錄</th><th class="col-narrow"><span class="narrow-text">就服員</span></th>' : ''}
         </tr>
       `;
 
@@ -1797,7 +1804,7 @@
         
         let adminCells = isAdmin ? `
           <td style="color:#666; font-size:12px; min-width:180px;">${escapeHtml(item.actionLog || '-').replace(/\n/g, '<br>')}</td>
-          <td>${escapeHtml(item.agentName)}</td>
+          <td class="col-narrow"><span class="narrow-text${nameLenClass(item.agentName)}">${escapeHtml(item.agentName)}</span></td>
         ` : '';
 
         let restHtml = "";
@@ -1823,7 +1830,7 @@
           <td style="vertical-align: middle; text-align: center;">
             ${actionButtonsHtml}
           </td>
-          <td><strong>${escapeHtml(item.clientName)}</strong></td>
+          <td class="col-narrow"><strong class="narrow-text${nameLenClass(item.clientName)}">${escapeHtml(item.clientName)}</strong></td>
           <td>${escapeHtml(getOpenDate(item))}</td>
           <td>${escapeHtml(formatDate(item.onboardDate))}</td>
           <td>${escapeHtml(formatDate(item.coachingDate))}<br><small style="color:${isCanceled?'#dc3545':'inherit'};">${escapeHtml(item.coachingTime)}</small>${restHtml}</td>
@@ -1880,6 +1887,11 @@
     }
     window.addEventListener('resize', updateFreezeOffset);
     applyFreezeState();
+
+    // v2.2.0：名字超過 3 個字時加上縮小字體的樣式（僅手機生效）
+    function nameLenClass(name) {
+      return Array.from(String(name || '').trim()).length > 3 ? ' long-name' : '';
+    }
 
     // v2.2.0：主管點地址開啟 Google 地圖（歷史紀錄表格、近期行程共用）
     // 手機上會直接開啟 Google 地圖 App；stopPropagation 避免觸發外層卡片的點擊事件
