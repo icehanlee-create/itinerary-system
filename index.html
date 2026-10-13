@@ -50,16 +50,18 @@
     
     .time-select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; background-color: #fff; cursor: pointer; text-align: center; width: 65px; font-weight: bold; }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0; min-width: 1000px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; vertical-align: middle; }
     th { background-color: #f2f2f2; }
     tbody tr { background-color: #fff; }
     tbody tr:hover { background-color: #f9f9f9; }
 
     /* v2.2.0：凍結左側兩欄（操作、服務使用者） */
-    .freeze-toggle { background-color: #fff; color: #0056b3; border: 1px solid #0056b3; font-size: 14px; padding: 7px 12px; width: auto; flex-shrink: 0; white-space: nowrap; }
+    .freeze-toggle { background-color: #fff; color: #0056b3; border: 1px solid #0056b3; font-size: 13px; padding: 5px 10px; border-radius: 4px 4px 0 0; width: auto; flex-shrink: 0; white-space: nowrap; }
     .freeze-toggle:hover { background-color: #e7f1ff; color: #0056b3; }
-    .freeze-toggle.active, .freeze-toggle.active:hover { background-color: #0056b3; color: #fff; }
+    /* 已啟用只換圖釘樣式（空心 → 實心），按鈕本身維持原樣，避免畫面太花 */
+    .freeze-toggle .pin-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+    .freeze-toggle.active .pin-icon { fill: currentColor; }
     /* 合併框線模式下，固定欄的框線不會跟著固定，會透出底下內容，所以凍結時改用分離框線 */
     .table-wrap.freeze-cols table { border-collapse: separate; border-spacing: 0; }
     .table-wrap.freeze-cols th, .table-wrap.freeze-cols td { border-width: 0 1px 1px 0; }
@@ -283,9 +285,12 @@
             <option value="all">📅 顯示全部</option>
           </select>
           <input type="text" id="searchInput" oninput="filterData()" placeholder="搜尋關鍵字 (姓名、事業單位、備註...)" style="flex: 1; min-width: 200px;">
-          <button type="button" id="freezeToggleBtn" class="freeze-toggle" onclick="toggleFreezeCols()" title="往右滑動表格時，固定顯示「操作」與「服務使用者」兩欄">📌 凍結左側兩欄</button>
         </div>
 
+        <!-- v2.2.0：凍結按鈕放在表格左上方，對齊被凍結的兩欄 -->
+        <div style="display: flex; justify-content: flex-start; margin-top: 15px;">
+          <button type="button" id="freezeToggleBtn" class="freeze-toggle" onclick="toggleFreezeCols()" title="往右滑動表格時，固定顯示「操作」與「服務使用者」兩欄"><svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 14v7"/></svg><span class="pin-text">凍結左側兩欄</span></button>
+        </div>
         <div id="tableWrap" class="table-wrap" style="overflow-x: auto;">
           <table>
             <thead id="dataTableHead">
@@ -308,7 +313,7 @@
     const APP_VERSION = "v2.2.0";
     const APP_UPDATED = "2026 年 10 月 13 日";
     const RELEASE_NOTES = [
-      { title: "歷史紀錄可凍結左側兩欄", text: "點搜尋框旁的「📌 凍結左側兩欄」，往右滑動表格時，「操作」與「服務使用者」會固定在左邊方便對照；再點一次即可取消。系統會記住你的選擇。" },
+      { title: "歷史紀錄可凍結左側兩欄", text: "點搜尋框旁的「凍結左側兩欄」圖釘按鈕（實心圖釘代表已啟用），往右滑動表格時，「操作」與「服務使用者」會固定在左邊方便對照；再點一次即可取消。系統會記住你的選擇。" },
       { title: "手機版表格更精簡", text: "手機上的操作按鈕改為圖示在上、文字在下的小按鈕；「服務使用者」「就服員」欄縮成一個字寬直排顯示（名字超過 3 個字會自動縮小），右側可以看到更多資料。" },
       { title: "主管：地址一鍵開地圖", text: "主管在歷史紀錄表格或近期行程中，點工作地址即可開啟 Google 地圖（手機會直接開啟地圖 App）。" },
       { title: "提醒：重新開案請填新的開案日期", text: "結案後重新開案，請填寫新的開案日期，累計時數會從 0 重新計算。" }
@@ -1870,7 +1875,7 @@
       document.getElementById('tableWrap').classList.toggle('freeze-cols', on);
       const btn = document.getElementById('freezeToggleBtn');
       btn.classList.toggle('active', on);
-      btn.innerText = on ? '📌 已凍結左側兩欄' : '📌 凍結左側兩欄';
+      btn.querySelector('.pin-text').innerText = on ? '已凍結左側兩欄' : '凍結左側兩欄';
       updateFreezeOffset();
     }
     function toggleFreezeCols() {
